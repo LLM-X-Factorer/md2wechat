@@ -1,0 +1,49 @@
+name: Deploy to Lighthouse
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.LIGHTHOUSE_HOST }}
+          username: ${{ secrets.LIGHTHOUSE_USER }}
+          key: ${{ secrets.LIGHTHOUSE_SSH_KEY }}
+          port: ${{ secrets.LIGHTHOUSE_PORT }}
+          script: |
+            set -e
+
+            DEPLOY_DIR=/opt/md2wechat
+
+            # First-time setup
+            if [ ! -d "$DEPLOY_DIR" ]; then
+              sudo mkdir -p "$DEPLOY_DIR"
+              sudo chown $USER:$USER "$DEPLOY_DIR"
+              git clone git@github.com:sawyerbutton/md2wechat.git "$DEPLOY_DIR"
+            fi
+
+            cd "$DEPLOY_DIR"
+
+            # Pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Ensure .env exists
+            if [ ! -f .env ]; then
+              echo "ERROR: .env file not found. Please create $DEPLOY_DIR/.env first."
+              exit 1
+            fi
+
+            # Build and restart
+            docker compose up -d --build --remove-orphans
+
+            # Cleanup dangling images
+            docker image prune -f
+
+            echo "Deployed successfully: $(git log --oneline -1)"
