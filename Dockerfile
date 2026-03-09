@@ -15,7 +15,8 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 
-RUN npm ci --omit=dev --os=linux --cpu=x64 --libc=musl && \
+RUN apk add --no-cache python3 make g++ && \
+    npm ci --omit=dev --os=linux --cpu=x64 --libc=musl && \
     npm cache clean --force && \
     rm -rf /root/.npm /tmp/* && \
     rm -rf node_modules/@img/sharp-libvips-linux-x64 \
