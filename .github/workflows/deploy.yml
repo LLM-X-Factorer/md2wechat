@@ -16,6 +16,7 @@ jobs:
           username: ${{ secrets.LIGHTHOUSE_USER }}
           key: ${{ secrets.LIGHTHOUSE_SSH_KEY }}
           port: ${{ secrets.LIGHTHOUSE_PORT }}
+          command_timeout: 30m
           script: |
             set -e
 
