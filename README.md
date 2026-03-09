@@ -1,6 +1,6 @@
 # md2wechat
 
-**Markdown → 微信公众号草稿箱** — 开源的一键发布 HTTP 微服务
+**Markdown → 微信公众号草稿箱** — 开源的一键发布 HTTP 微服务，附带 Web 管理面板
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/tenisinfinite/md2wechat)
@@ -14,10 +14,12 @@
 
 它的设计目标是成为你内容工作流的**最后一环**——无论内容来自 Claude、Notion、飞书还是人工创作，只需统一转换为 Markdown，`md2wechat` 负责后续的一切。
 
+你可以通过**内置 Web 管理面板**直接在浏览器中操作，也可以通过 **REST API** 集成到任何自动化工作流中。
+
 ```
 你的内容工具（Claude / Notion / 飞书 / 手写）
         ↓  Markdown 文件
-  n8n / 脚本 / 任意工具
+  n8n / 脚本 / Web 面板
         ↓  POST /api/publish
      md2wechat
         ↓
@@ -30,11 +32,12 @@
 
 ## 核心功能
 
+- **Web 管理面板**：浏览器内发布文章、查看历史、管理配置，开箱即用
 - **Markdown → 微信兼容 HTML**：代码高亮、数学公式、表格、引用块全支持
 - **图片自动处理**：本地图片和外链图片统一上传到微信图床，自动替换链接
 - **双模式封面生成**
   - `sharp` 模式：背景图 + 标题文字合成，支持自定义背景和额外图层
-  - `ai` 模式：接入 NanoBanana Pro 等 AI 生图服务，根据标题自动构建 Prompt
+  - `ai` 模式：接入 Google Imagen 4 AI 生图，根据标题自动构建 Prompt
 - **自定义主题包**：支持挂载完整主题包（CSS + 兼容性覆盖），无需修改源码
 - **Markdown 插件扩展**：通过配置文件注册任意 `markdown-it` 插件
 - **发布历史持久化**：默认 SQLite，可切换为 PostgreSQL
@@ -61,14 +64,24 @@ cd md2wechat
 cp .env.example .env
 # 编辑 .env，至少填写 WXGZH_APPID 和 WXGZH_APPSECRET
 
-# 3. 启动服务
+# 3. 构建并启动服务
+npm run build
 docker-compose up -d
 
-# 4. 验证运行状态
-curl http://localhost:3000/health
+# 4. 打开 Web 管理面板
+open http://localhost:3000
 ```
 
-### 发布你的第一篇文章
+### Web 管理面板
+
+启动后访问 `http://localhost:3000` 即可使用 Web 管理面板：
+
+- **仪表盘**：服务状态一览（微信配置、数据库、AI 封面、Token 缓存）
+- **发布文章**：拖拽上传 Markdown，选择主题和封面策略，一键发布
+- **发布历史**：分页查看所有发布记录，筛选状态，预览封面
+- **系统设置**：查看当前配置和可用主题
+
+### 通过 API 发布
 
 ```bash
 curl -X POST http://localhost:3000/api/publish \
@@ -102,18 +115,32 @@ curl -X POST http://localhost:3000/api/publish \
 | `WEBHOOK_URL` | — | 全局 Webhook 回调地址 |
 | `DATABASE_URL` | SQLite | PostgreSQL 连接串，不填用 SQLite |
 
-### AI 封面配置
+### AI 封面配置（Google Imagen 4）
+
+通过 Gemini API 调用 Google Imagen 4 生成封面图。
 
 | 变量名 | 说明 |
 |--------|------|
-| `NANOBANA_API_URL` | NanoBanana API 端点 |
-| `NANOBANA_API_KEY` | NanoBanana API Key |
+| `IMAGEN_API_KEY` | Gemini API Key（[获取地址](https://aistudio.google.com/apikey)） |
+| `IMAGEN_MODEL` | 模型名，默认 `imagen-4.0-fast-generate-001` |
+
+可选模型：
+
+| 模型 | 特点 | 价格 |
+|------|------|------|
+| `imagen-4.0-fast-generate-001` | 快速生成（默认） | $0.02/张 |
+| `imagen-4.0-generate-001` | 标准质量 | $0.04/张 |
+| `imagen-4.0-ultra-generate-001` | 最高质量 | $0.06/张 |
+
+未配置 `IMAGEN_API_KEY` 时，AI 封面请求会自动降级为 `sharp` 模式。
 
 完整配置项见 [`.env.example`](.env.example)。
 
 ### 微信 IP 白名单
 
-微信公众号后台 → 设置与开发 → 开发接口管理 → 基本配置 → IP 白名单，将服务器的公网 IP 添加进去。可通过 `curl https://ip.sb` 查询当前服务器 IP。
+微信公众号后台 → 设置与开发 → 开发接口管理 → 基本配置 → IP 白名单，将服务器的公网 IP 添加进去。
+
+> 注意：如果使用 Docker 部署，容器的出口 IP 可能与宿主机不同。可通过 `docker exec <容器名> wget -qO- https://ip.sb` 查询容器实际出口 IP。
 
 ---
 
@@ -147,6 +174,7 @@ curl -X POST http://localhost:3000/api/publish \
     "publishId": "uuid",
     "mediaId": "草稿 media_id",
     "title": "文章标题",
+    "author": "作者名",
     "coverUrl": "封面图 URL",
     "coverStrategy": "sharp",
     "publishedAt": "2025-01-01T00:00:00Z"
@@ -161,6 +189,10 @@ curl -X POST http://localhost:3000/api/publish \
 ### GET /api/themes
 
 列出所有可用主题（内置 + 自定义）。
+
+### GET /api/config
+
+查看当前配置（脱敏）。
 
 ### GET /health
 
@@ -251,10 +283,10 @@ curl -X POST http://localhost:3000/api/publish \
   -F "article=@article.md" \
   -F "coverStrategy=ai"
   # Prompt 根据文章标题自动构建
-  # 也可以自定义：-F "coverPrompt=科技感插画，蓝色调，无文字"
+  # 也可以自定义：-F "coverPrompt=tech illustration, blue tone, no text"
 ```
 
-未配置 `NANOBANA_API_KEY` 时，AI 封面请求会自动降级为 `sharp` 模式。
+未配置 `IMAGEN_API_KEY` 时，AI 封面请求会自动降级为 `sharp` 模式。
 
 ---
 
@@ -309,15 +341,15 @@ md2wechat/
 ├── src/
 │   ├── core/           # 核心处理层（parser / converter / fixer / cover / wechat）
 │   ├── services/       # Pipeline、数据库、Webhook
-│   ├── routes/         # HTTP 路由
+│   ├── routes/         # HTTP 路由 + 静态文件服务
 │   └── types/          # TypeScript 类型定义
+├── public/
+│   └── index.html      # Web 管理面板（单文件 SPA）
 ├── assets/
 │   └── backgrounds/    # 内置封面背景图
 ├── config/             # 用户配置目录（容器挂载）
 ├── themes/             # 用户自定义主题目录（容器挂载）
 ├── data/               # SQLite 数据文件目录（容器挂载）
-├── docs/
-│   └── SPEC.md         # 完整项目规格文档
 ├── Dockerfile
 ├── docker-compose.yml
 ├── docker-compose.prod.yml
@@ -331,9 +363,10 @@ md2wechat/
 `md2wechat` 的核心处理能力参照 [`@lyhue1991/wxgzh`](https://github.com/lyhue1991/wxgzh)（MIT License）实现，并在以下方面做了架构改造：
 
 - 微信兼容性 CSS 从硬编码常量改为可配置结构，支持主题包覆盖
-- 封面生成改为策略模式，`sharp` 合成和 AI 生图并存
+- 封面生成改为策略模式，`sharp` 合成和 Google Imagen 4 AI 生图并存
 - 微信 API token 缓存从本地文件改为内存管理，适合容器化场景
 - 核心函数改为接受字符串输入输出（不依赖文件系统路径），Pipeline 全内存化
+- 内置 Web 管理面板，零额外依赖
 
 ---
 
@@ -348,7 +381,8 @@ git clone https://github.com/tenisinfinite/md2wechat.git
 cd md2wechat
 npm install
 cp .env.example .env   # 填写你的微信凭证
-npm run dev            # 启动开发服务器（ts-node，热重载）
+npm run build
+node dist/index.js     # 启动服务
 ```
 
 **提交前请确认**：
@@ -362,7 +396,7 @@ npm run dev            # 启动开发服务器（ts-node，热重载）
 
 **Q：服务返回"微信接口调用失败：invalid ip"**
 
-A：当前服务器 IP 未加入微信公众号 IP 白名单。前往公众号后台 → 设置与开发 → 开发接口管理 → 基本配置 → IP 白名单添加。
+A：当前服务器 IP 未加入微信公众号 IP 白名单。前往公众号后台 → 设置与开发 → 开发接口管理 → 基本配置 → IP 白名单添加。Docker 环境下请检查容器的实际出口 IP。
 
 **Q：图片在预览中显示但发布后看不到**
 
@@ -370,7 +404,7 @@ A：图片上传到微信图床需要 AppID 和 AppSecret 正确配置。检查 
 
 **Q：AI 封面不生效，自动降级为 sharp**
 
-A：检查 `NANOBANA_API_KEY` 是否配置，以及 `/health` 中 `aiCoverAvailable` 是否为 `true`。
+A：检查 `IMAGEN_API_KEY` 是否配置，以及 `/health` 中 `aiCoverAvailable` 是否为 `true`。API Key 可在 [Google AI Studio](https://aistudio.google.com/apikey) 获取。
 
 **Q：能否支持定时发布？**
 
@@ -384,4 +418,4 @@ MIT © [tenisinfinite](https://github.com/tenisinfinite)
 
 ---
 
-*如果这个项目对你有帮助，欢迎 Star ⭐*
+*如果这个项目对你有帮助，欢迎 Star*

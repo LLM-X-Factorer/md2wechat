@@ -1,0 +1,8 @@
+// config/markdown-plugins.js
+// 用户可以在这里注册任意 markdown-it 插件
+// 将此文件重命名为 markdown-plugins.js 即可生效
+module.exports = [
+  // 示例：注册自定义容器语法
+  // [require('markdown-it-container'), 'tip', { /* options */ }],
+  // [require('markdown-it-footnote')],
+];

@@ -1,0 +1,14 @@
+services:
+  md2wechat:
+    build: .
+    ports:
+      - "3100:3000"
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=debug
+    volumes:
+      - ./config:/app/config
+      - ./themes:/app/themes
+      - ./data:/app/data
+    restart: unless-stopped

@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>md2wechat 管理面板</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #07c160;
+  --primary-hover: #06ad56;
+  --primary-light: #e8f8ef;
+  --primary-bg: #f0faf4;
+  --danger: #e53935;
+  --danger-light: #fdecea;
+  --warning: #ff9800;
+  --warning-light: #fff3e0;
+  --info: #1976d2;
+  --info-light: #e3f2fd;
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #eeeeee;
+  --gray-300: #e0e0e0;
+  --gray-400: #bdbdbd;
+  --gray-500: #9e9e9e;
+  --gray-600: #757575;
+  --gray-700: #616161;
+  --gray-800: #424242;
+  --gray-900: #212121;
+  --bg: #f7f8fa;
+  --card-bg: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border: #e8e8e8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --sidebar-width: 220px;
+  --header-height: 56px;
+  --transition: 0.2s ease;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Layout */
+.app { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--card-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform var(--transition);
+}
+
+.sidebar-logo {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-logo .logo-icon {
+  width: 36px; height: 36px;
+  background: var(--primary);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.sidebar-logo h1 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.sidebar-logo .version {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.sidebar-nav { flex: 1; padding: 12px 8px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.nav-item:hover { background: var(--gray-100); color: var(--text); }
+
+.nav-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+}
+
+.page-header {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.page-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.page-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.page-body { padding: 24px; max-width: 1200px; }
+
+/* Mobile bottom tabs */
+.bottom-tabs {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  padding: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bottom-tabs-inner {
+  display: flex;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition);
+  font-size: 11px;
+  user-select: none;
+}
+
+.tab-item svg { width: 22px; height: 22px; }
+.tab-item.active { color: var(--primary); }
+.tab-item:active { opacity: 0.7; }
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 20px;
+  transition: box-shadow var(--transition);
+}
+
+.card:hover { box-shadow: var(--shadow-sm); }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.stat-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon svg { width: 22px; height: 22px; }
+
+.stat-icon.green { background: var(--primary-light); color: var(--primary); }
+.stat-icon.red { background: var(--danger-light); color: var(--danger); }
+.stat-icon.blue { background: var(--info-light); color: var(--info); }
+.stat-icon.orange { background: var(--warning-light); color: var(--warning); }
+.stat-icon.gray { background: var(--gray-200); color: var(--gray-600); }
+
+.stat-info { flex: 1; min-width: 0; }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.stat-value { font-size: 20px; font-weight: 700; line-height: 1.2; }
+.stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-green { background: var(--primary-light); color: #0a8f47; }
+.badge-red { background: var(--danger-light); color: var(--danger); }
+.badge-gray { background: var(--gray-200); color: var(--gray-600); }
+.badge-blue { background: var(--info-light); color: var(--info); }
+.badge-orange { background: var(--warning-light); color: var(--warning); }
+
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.badge-green .badge-dot { background: var(--primary); }
+.badge-red .badge-dot { background: var(--danger); }
+.badge-gray .badge-dot { background: var(--gray-500); }
+
+/* Forms */
+.form-group { margin-bottom: 20px; }
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.form-label .required { color: var(--danger); margin-left: 2px; }
+
+.form-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--card-bg);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(7,193,96,0.1);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder { color: var(--gray-400); }
+
+.form-textarea { resize: vertical; min-height: 80px; }
+
+.form-select { cursor: pointer; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Radio group */
+.radio-group { display: flex; gap: 16px; }
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 0;
+}
+
+.radio-label input[type="radio"] {
+  appearance: none;
+  width: 18px; height: 18px;
+  border: 2px solid var(--gray-400);
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition);
+}
+
+.radio-label input[type="radio"]:checked {
+  border-color: var(--primary);
+}
+
+.radio-label input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+/* Toggle switch */
+.toggle-wrap { display: flex; align-items: center; gap: 10px; }
+
+.toggle {
+  position: relative;
+  width: 44px; height: 24px;
+  cursor: pointer;
+}
+
+.toggle input { display: none; }
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--gray-300);
+  border-radius: 12px;
+  transition: background var(--transition);
+}
+
+.toggle input:checked + .toggle-track { background: var(--primary); }
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition);
+  pointer-events: none;
+}
+
+.toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+
+.toggle-text { font-size: 14px; color: var(--text-secondary); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: scale(0.98); }
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+.btn-outline:hover:not(:disabled) { background: var(--gray-100); border-color: var(--gray-400); }
+
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+
+.btn-icon {
+  width: 36px; height: 36px;
+  padding: 0;
+  border-radius: var(--radius);
+}
+
+.btn-icon svg { width: 18px; height: 18px; }
+
+/* Dropzone */
+.dropzone {
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--gray-50);
+}
+
+.dropzone:hover,
+.dropzone.drag-over {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.dropzone svg { width: 40px; height: 40px; color: var(--gray-400); margin-bottom: 12px; }
+.dropzone.drag-over svg { color: var(--primary); }
+
+.dropzone-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+.dropzone-hint { font-size: 13px; color: var(--text-muted); }
+
+.dropzone input[type="file"] { display: none; }
+
+.file-preview {
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.file-preview .file-name {
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-preview .file-size { font-size: 12px; color: var(--text-muted); }
+
+.file-preview .file-remove {
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color var(--transition);
+  flex-shrink: 0;
+}
+.file-preview .file-remove:hover { color: var(--danger); }
+
+/* Markdown preview */
+.md-preview {
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 13px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead { background: var(--gray-50); }
+
+th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  vertical-align: middle;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--gray-50); }
+
+.table-title {
+  font-weight: 500;
+  color: var(--text);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.table-empty svg { width: 48px; height: 48px; margin-bottom: 12px; color: var(--gray-300); }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-info { font-size: 13px; color: var(--text-muted); }
+
+.pagination-btns { display: flex; gap: 4px; }
+
+.page-btn {
+  min-width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  padding: 0 8px;
+}
+
+.page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-tabs { display: flex; gap: 4px; }
+
+.filter-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: var(--font);
+}
+
+.filter-tab:hover { background: var(--gray-100); }
+.filter-tab.active { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+
+/* Settings */
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.settings-item {
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-item-label { font-size: 13px; color: var(--text-muted); }
+.settings-item-value { font-size: 14px; font-weight: 500; text-align: right; word-break: break-all; }
+
+.theme-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.theme-tag {
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--gray-100);
+  border: 1px solid var(--border);
+}
+
+.theme-tag.builtin { border-color: var(--primary); background: var(--primary-light); color: #0a8f47; }
+.theme-tag.custom { border-color: var(--info); background: var(--info-light); color: var(--info); }
+
+.env-hint {
+  background: var(--warning-light);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-size: 13px;
+  color: var(--gray-800);
+  line-height: 1.8;
+}
+
+.env-hint code {
+  background: rgba(0,0,0,0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+/* Spinner */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.spinner-lg { width: 32px; height: 32px; border-width: 3px; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  max-width: 380px;
+  animation: toastIn 0.3s ease;
+  pointer-events: auto;
+}
+
+.toast.toast-out { animation: toastOut 0.3s ease forwards; }
+
+.toast-success { border-left: 3px solid var(--primary); }
+.toast-error { border-left: 3px solid var(--danger); }
+.toast-info { border-left: 3px solid var(--info); }
+
+.toast-icon { flex-shrink: 0; }
+.toast-success .toast-icon { color: var(--primary); }
+.toast-error .toast-icon { color: var(--danger); }
+.toast-info .toast-icon { color: var(--info); }
+
+.toast-msg { flex: 1; line-height: 1.4; }
+
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(40px); } }
+
+/* Publish result */
+.publish-result {
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+}
+
+.publish-result.success { background: var(--primary-light); border: 1px solid #b7e4c7; }
+.publish-result.error { background: var(--danger-light); border: 1px solid #f5c6cb; }
+
+.publish-result h3 { font-size: 18px; margin-bottom: 16px; }
+.publish-result .result-fields { text-align: left; margin-top: 16px; }
+.publish-result .result-field { margin-bottom: 10px; }
+.publish-result .result-field-label { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; }
+.publish-result .result-field-value { font-size: 14px; font-weight: 500; word-break: break-all; }
+
+.publish-result .cover-preview {
+  margin-top: 12px;
+  max-width: 300px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* Cover thumbnail */
+.cover-thumb-wrap { position: relative; display: inline-block; }
+
+.cover-thumb {
+  width: 36px; height: 36px;
+  border-radius: 4px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: transform var(--transition);
+}
+
+.cover-thumb:hover { transform: scale(1.1); }
+
+.cover-popup {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cover-popup.show { display: flex; }
+
+.cover-popup img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.85);
+  z-index: 8000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading-overlay.show { display: flex; }
+.loading-overlay .loading-text { font-size: 15px; color: var(--text-secondary); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .main-content { margin-left: 0; padding-bottom: 70px; }
+  .bottom-tabs { display: block; }
+  .page-body { padding: 16px; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .form-row { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .pagination { flex-direction: column; align-items: center; }
+  .toast-container { left: 12px; right: 12px; }
+  .toast { max-width: 100%; }
+  table { font-size: 12px; }
+  th, td { padding: 8px 10px; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+/* Utility */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-4 { margin-top: 16px; }
+.mb-4 { margin-bottom: 16px; }
+.gap-2 { gap: 8px; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.flex-wrap { flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">M</div>
+      <div>
+        <h1>md2wechat</h1>
+        <div class="version" id="sidebarVersion">v-</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>仪表盘</span>
+      </div>
+      <div class="nav-item" data-page="publish" onclick="navigateTo('publish')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span>发布文章</span>
+      </div>
+      <div class="nav-item" data-page="history" onclick="navigateTo('history')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>发布历史</span>
+      </div>
+      <div class="nav-item" data-page="settings" onclick="navigateTo('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>系统设置</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <!-- Dashboard -->
+    <section class="page" id="page-dashboard">
+      <div class="page-header">
+        <h2>仪表盘</h2>
+        <p>系统状态概览与服务健康检查</p>
+      </div>
+      <div class="page-body">
+        <div class="card-grid" id="healthCards">
+          <!-- filled by JS -->
+        </div>
+        <div class="card mt-4" id="quickStats" style="display:none;">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="stat-label">已发布文章总数</div>
+              <div class="stat-value" id="totalArticles">-</div>
+            </div>
+            <div class="btn btn-outline btn-sm" onclick="refreshDashboard()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-1.64-8.36L23 10"/></svg>
+              刷新
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Publish -->
+    <section class="page hidden" id="page-publish">
+      <div class="page-header">
+        <h2>发布文章</h2>
+        <p>上传 Markdown 文件并发布到微信公众号草稿箱</p>
+      </div>
+      <div class="page-body">
+        <div id="publishForm">
+          <!-- Dropzone -->
+          <div class="form-group">
+            <label class="form-label">Markdown 文件<span class="required">*</span></label>
+            <div class="dropzone" id="mdDropzone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div class="dropzone-title">拖拽 .md 文件到此处</div>
+              <div class="dropzone-hint">或点击选择文件</div>
+              <input type="file" id="mdFileInput" accept=".md,.markdown,text/markdown">
+            </div>
+            <div id="mdFilePreview" class="hidden"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">作者</label>
+              <input type="text" class="form-input" id="inputAuthor" placeholder="留空使用默认作者">
+            </div>
+            <div class="form-group">
+              <label class="form-label">主题</label>
+              <select class="form-select" id="inputTheme">
+                <option value="">加载中...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">摘要</label>
+            <textarea class="form-textarea" id="inputDigest" placeholder="文章摘要，留空将自动生成" rows="2"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">封面策略</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="coverStrategy" value="sharp" checked>
+                  <span>Sharp 生成</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="coverStrategy" value="ai">
+                  <span>AI 生成</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group" id="commentGroup">
+              <label class="form-label">开启评论</label>
+              <div class="toggle-wrap">
+                <label class="toggle">
+                  <input type="checkbox" id="inputComment">
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+                <span class="toggle-text" id="commentText">关闭</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group hidden" id="aiPromptGroup">
+            <label class="form-label">AI 封面 Prompt</label>
+            <textarea class="form-textarea" id="inputCoverPrompt" placeholder="描述你想要的封面风格..." rows="2"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">自定义封面</label>
+              <input type="file" class="form-input" id="inputCover" accept="image/*" style="padding:6px 8px;">
+              <div class="form-hint">上传自定义封面图片（可选）</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">附加图片</label>
+              <input type="file" class="form-input" id="inputImages" accept="image/*" multiple style="padding:6px 8px;">
+              <div class="form-hint">文章中引用的图片</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Webhook URL</label>
+            <input type="text" class="form-input" id="inputWebhook" placeholder="发布完成后的回调地址（可选）">
+          </div>
+
+          <div class="flex items-center gap-2 mt-4">
+            <button class="btn btn-primary" id="btnPublish" onclick="handlePublish()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              发布到草稿箱
+            </button>
+            <button class="btn btn-outline" onclick="resetPublishForm()">重置</button>
+          </div>
+        </div>
+
+        <div id="publishResult" class="hidden mt-4"></div>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section class="page hidden" id="page-history">
+      <div class="page-header">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2>发布历史</h2>
+            <p>查看所有已发布文章的状态与详情</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="loadHistory()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-1.64-8.36L23 10"/></svg>
+            刷新
+          </button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="filter-bar">
+          <div class="filter-tabs" id="statusFilter">
+            <button class="filter-tab active" data-status="" onclick="filterHistory(this, '')">全部</button>
+            <button class="filter-tab" data-status="draft" onclick="filterHistory(this, 'draft')">草稿</button>
+            <button class="filter-tab" data-status="failed" onclick="filterHistory(this, 'failed')">失败</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>标题</th>
+                <th>作者</th>
+                <th>主题</th>
+                <th>封面</th>
+                <th>状态</th>
+                <th>Webhook</th>
+                <th>发布时间</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="7" class="table-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div>加载中...</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="historyPagination"></div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="page hidden" id="page-settings">
+      <div class="page-header">
+        <h2>系统设置</h2>
+        <p>查看当前配置信息（只读）</p>
+      </div>
+      <div class="page-body">
+        <div class="settings-section">
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            接口鉴权
+          </h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="password" class="form-input" id="settingsApiKey" placeholder="未设置 API Key 时无需填写" style="max-width:320px;">
+            <button class="btn btn-outline" onclick="saveApiKey()" style="white-space:nowrap;">保存</button>
+            <button class="btn btn-outline" onclick="clearApiKey()" style="white-space:nowrap;">清除</button>
+          </div>
+          <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">仅在服务端配置了 API_KEY 时需要填写，保存在浏览器本地。</p>
+        </div>
+
+        <div class="settings-section">
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9V12a2 2 0 0 1 0 4z"/></svg>
+            基本配置
+          </h3>
+          <div class="settings-grid" id="configGrid">
+            <div class="settings-item">
+              <span class="settings-item-label">加载中...</span>
+              <span class="settings-item-value">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.912 5.813h6.112l-4.968 3.587 1.912 5.813L12 14.626l-4.968 3.587 1.912-5.813L4 8.813h6.112z"/></svg>
+            可用主题
+          </h3>
+          <div id="themesList">
+            <span class="settings-item-label">加载中...</span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            配置说明
+          </h3>
+          <div class="env-hint">
+            <p>系统配置通过环境变量或 <code>.env</code> 文件管理，以下为关键配置项：</p>
+            <p><code>WXGZH_APPID</code> - 公众号 AppID</p>
+            <p><code>WXGZH_APPSECRET</code> - 公众号 AppSecret</p>
+            <p><code>WXGZH_DEFAULT_AUTHOR</code> - 默认作者</p>
+            <p><code>WXGZH_DEFAULT_THEME</code> - 默认主题</p>
+            <p><code>WXGZH_DEFAULT_COVER_STRATEGY</code> - 默认封面策略 (sharp / ai)</p>
+            <p><code>IMAGEN_API_KEY</code> - Google Imagen 4 API Key</p>
+            <p><code>WEBHOOK_URL</code> - 默认 Webhook 回调地址</p>
+            <p><code>API_KEY</code> - 接口鉴权 Key（设置后需在面板输入）</p>
+            <p style="margin-top:8px; color: var(--text-muted);">修改配置后需要重启服务才能生效。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Bottom tabs (mobile) -->
+<div class="bottom-tabs" id="bottomTabs">
+  <div class="bottom-tabs-inner">
+    <div class="tab-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>仪表盘</span>
+    </div>
+    <div class="tab-item" data-page="publish" onclick="navigateTo('publish')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <span>发布</span>
+    </div>
+    <div class="tab-item" data-page="history" onclick="navigateTo('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>历史</span>
+    </div>
+    <div class="tab-item" data-page="settings" onclick="navigateTo('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68V3a2 2 0 0 1 4 0v.09"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Cover popup -->
+<div class="cover-popup" id="coverPopup" onclick="closeCoverPopup()">
+  <img id="coverPopupImg" src="" alt="封面预览">
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner spinner-lg"></div>
+  <div class="loading-text">正在发布文章，请稍候...</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ----- State -----
+  const state = {
+    currentPage: 'dashboard',
+    health: null,
+    config: null,
+    themes: null,
+    history: { items: [], total: 0, page: 1, pageSize: 20 },
+    historyFilter: '',
+    mdFile: null,
+    healthTimer: null,
+  };
+
+  // ----- Helpers -----
+  function $(sel) { return document.querySelector(sel); }
+  function $$(sel) { return document.querySelectorAll(sel); }
+
+  function formatDate(d) {
+    if (!d) return '-';
+    const dt = new Date(d);
+    if (isNaN(dt)) return d;
+    const pad = n => String(n).padStart(2, '0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function maskString(s) {
+    if (!s || s.length <= 6) return s || '-';
+    return s.slice(0, 3) + '***' + s.slice(-3);
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ----- Toast -----
+  function toast(msg, type) {
+    type = type || 'info';
+    const icons = {
+      success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+      error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+      info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    };
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.innerHTML = '<span class="toast-icon">' + icons[type] + '</span><span class="toast-msg">' + escapeHtml(msg) + '</span>';
+    $('#toastContainer').appendChild(el);
+    setTimeout(() => {
+      el.classList.add('toast-out');
+      setTimeout(() => el.remove(), 300);
+    }, 3500);
+  }
+
+  // ----- API Key -----
+  function getApiKey() {
+    return localStorage.getItem('md2wechat_api_key') || '';
+  }
+
+  function setApiKey(key) {
+    if (key) {
+      localStorage.setItem('md2wechat_api_key', key);
+    } else {
+      localStorage.removeItem('md2wechat_api_key');
+    }
+  }
+
+  function getAuthHeaders() {
+    const key = getApiKey();
+    return key ? { 'X-API-Key': key } : {};
+  }
+
+  // ----- API -----
+  async function apiFetch(url, opts) {
+    try {
+      opts = opts || {};
+      opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
+      const res = await fetch(url, opts);
+      if (res.status === 401) {
+        const savedKey = getApiKey();
+        const newKey = prompt('请输入 API Key（服务端已配置 API_KEY 鉴权）：', savedKey);
+        if (newKey !== null) {
+          setApiKey(newKey);
+          opts.headers = Object.assign({}, opts.headers, getAuthHeaders());
+          const retryRes = await fetch(url, opts);
+          if (!retryRes.ok) {
+            const body = await retryRes.json().catch(() => ({}));
+            throw new Error(body.error || body.message || '请求失败 (' + retryRes.status + ')');
+          }
+          return await retryRes.json();
+        }
+        throw new Error('需要 API Key 才能访问');
+      }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.message || '请求失败 (' + res.status + ')');
+      }
+      return await res.json();
+    } catch (e) {
+      if (e.name === 'TypeError' && e.message.includes('fetch')) {
+        throw new Error('无法连接到服务器');
+      }
+      throw e;
+    }
+  }
+
+  // ----- Router -----
+  const pages = ['dashboard', 'publish', 'history', 'settings'];
+
+  window.navigateTo = function(page) {
+    if (!pages.includes(page)) page = 'dashboard';
+    window.location.hash = '#' + page;
+  };
+
+  function handleRoute() {
+    const hash = window.location.hash.slice(1) || 'dashboard';
+    const page = pages.includes(hash) ? hash : 'dashboard';
+    state.currentPage = page;
+
+    pages.forEach(p => {
+      const el = $('#page-' + p);
+      if (el) el.classList.toggle('hidden', p !== page);
+    });
+
+    $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+    $$('.tab-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+
+    if (page === 'dashboard') refreshDashboard();
+    if (page === 'publish') loadThemes();
+    if (page === 'history') loadHistory();
+    if (page === 'settings') loadSettings();
+  }
+
+  window.addEventListener('hashchange', handleRoute);
+
+  // ----- Dashboard -----
+  window.refreshDashboard = async function() {
+    try {
+      const data = await apiFetch('/health');
+      state.health = data;
+      renderHealthCards(data);
+      $('#sidebarVersion').textContent = 'v' + (data.version || '-');
+    } catch (e) {
+      renderHealthError(e.message);
+    }
+
+    try {
+      const hist = await apiFetch('/api/history?page=1&pageSize=1');
+      $('#quickStats').style.display = '';
+      $('#totalArticles').textContent = hist.total != null ? hist.total : '-';
+    } catch (e) {
+      $('#quickStats').style.display = 'none';
+    }
+  };
+
+  function renderHealthCards(d) {
+    const items = [
+      { label: '服务状态', value: d.status === 'ok' ? '正常运行' : (d.status || '未知'), icon: 'green', ok: d.status === 'ok' },
+      { label: '微信配置', value: d.wxConfigured ? '已配置' : '未配置', icon: d.wxConfigured ? 'green' : 'red', ok: d.wxConfigured },
+      { label: '数据库连接', value: d.dbConnected ? '已连接' : '未连接', icon: d.dbConnected ? 'green' : 'red', ok: d.dbConnected },
+      { label: 'AI 封面', value: d.aiCoverAvailable ? '可用' : '不可用', icon: d.aiCoverAvailable ? 'blue' : 'gray', ok: d.aiCoverAvailable },
+      { label: 'Token 缓存', value: d.tokenCached ? '已缓存' : '未缓存', icon: d.tokenCached ? 'green' : 'orange', ok: d.tokenCached },
+      { label: '版本', value: 'v' + (d.version || '-'), icon: 'blue', ok: true },
+    ];
+
+    const svgs = {
+      green: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+      red: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+      blue: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+      orange: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+      gray: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+    };
+
+    $('#healthCards').innerHTML = items.map(it => `
+      <div class="card">
+        <div class="stat-card">
+          <div class="stat-icon ${it.icon}">${svgs[it.icon]}</div>
+          <div class="stat-info">
+            <div class="stat-label">${it.label}</div>
+            <div class="stat-value" style="font-size:16px; color: ${it.ok ? 'var(--text)' : (it.icon === 'gray' ? 'var(--gray-500)' : (it.icon === 'orange' ? 'var(--warning)' : 'var(--danger)'))}">${escapeHtml(it.value)}</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderHealthError(msg) {
+    $('#healthCards').innerHTML = `
+      <div class="card" style="grid-column: 1/-1;">
+        <div class="stat-card">
+          <div class="stat-icon red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">服务状态</div>
+            <div class="stat-value" style="font-size:16px; color:var(--danger)">连接失败</div>
+            <div class="stat-sub">${escapeHtml(msg)}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Auto-refresh health with debounce
+  function startHealthRefresh() {
+    if (state.healthTimer) clearInterval(state.healthTimer);
+    state.healthTimer = setInterval(() => {
+      if (state.currentPage === 'dashboard') refreshDashboard();
+    }, 30000);
+  }
+
+  // ----- Publish -----
+  function setupDropzone() {
+    const dz = $('#mdDropzone');
+    const input = $('#mdFileInput');
+
+    dz.addEventListener('click', () => input.click());
+
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', e => { e.preventDefault(); dz.classList.remove('drag-over'); });
+    dz.addEventListener('drop', e => {
+      e.preventDefault();
+      dz.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length && files[0].name.match(/\.(md|markdown)$/i)) {
+        handleMdFile(files[0]);
+      } else {
+        toast('请上传 .md 格式文件', 'error');
+      }
+    });
+
+    input.addEventListener('change', () => {
+      if (input.files.length) handleMdFile(input.files[0]);
+    });
+
+    // Cover strategy toggle
+    $$('input[name="coverStrategy"]').forEach(r => {
+      r.addEventListener('change', () => {
+        $('#aiPromptGroup').classList.toggle('hidden', r.value !== 'ai' || !r.checked);
+      });
+    });
+
+    // Comment toggle text
+    $('#inputComment').addEventListener('change', function() {
+      $('#commentText').textContent = this.checked ? '开启' : '关闭';
+    });
+  }
+
+  function handleMdFile(file) {
+    state.mdFile = file;
+    const preview = $('#mdFilePreview');
+    preview.classList.remove('hidden');
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const content = e.target.result;
+      const previewText = content.length > 1000 ? content.slice(0, 1000) + '\n...' : content;
+      preview.innerHTML = `
+        <div class="file-preview">
+          <div>
+            <div class="file-name">${escapeHtml(file.name)}</div>
+            <div class="file-size">${formatSize(file.size)}</div>
+          </div>
+          <span class="file-remove" onclick="removeMdFile()" title="移除文件">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </span>
+        </div>
+        <div class="md-preview">${escapeHtml(previewText)}</div>
+      `;
+    };
+    reader.readAsText(file);
+  }
+
+  window.removeMdFile = function() {
+    state.mdFile = null;
+    $('#mdFileInput').value = '';
+    $('#mdFilePreview').classList.add('hidden');
+    $('#mdFilePreview').innerHTML = '';
+  };
+
+  async function loadThemes() {
+    if (state.themes) {
+      renderThemeSelect();
+      return;
+    }
+    try {
+      state.themes = await apiFetch('/api/themes');
+      renderThemeSelect();
+    } catch (e) {
+      $('#inputTheme').innerHTML = '<option value="">加载失败</option>';
+    }
+  }
+
+  function renderThemeSelect() {
+    const sel = $('#inputTheme');
+    let html = '<option value="">默认主题</option>';
+    const t = state.themes;
+    if (t.builtin && t.builtin.length) {
+      html += '<optgroup label="内置主题">';
+      t.builtin.forEach(n => { html += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`; });
+      html += '</optgroup>';
+    }
+    if (t.custom && t.custom.length) {
+      html += '<optgroup label="自定义主题">';
+      t.custom.forEach(n => { html += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`; });
+      html += '</optgroup>';
+    }
+    sel.innerHTML = html;
+  }
+
+  window.handlePublish = async function() {
+    if (!state.mdFile) {
+      toast('请先选择 Markdown 文件', 'error');
+      return;
+    }
+
+    const btn = $('#btnPublish');
+    btn.disabled = true;
+    $('#loadingOverlay').classList.add('show');
+    $('#publishResult').classList.add('hidden');
+
+    const fd = new FormData();
+    fd.append('article', state.mdFile);
+
+    const author = $('#inputAuthor').value.trim();
+    if (author) fd.append('author', author);
+
+    const theme = $('#inputTheme').value;
+    if (theme) fd.append('theme', theme);
+
+    const digest = $('#inputDigest').value.trim();
+    if (digest) fd.append('digest', digest);
+
+    const strategy = document.querySelector('input[name="coverStrategy"]:checked').value;
+    fd.append('coverStrategy', strategy);
+
+    if (strategy === 'ai') {
+      const prompt = $('#inputCoverPrompt').value.trim();
+      if (prompt) fd.append('coverPrompt', prompt);
+    }
+
+    const coverFiles = $('#inputCover').files;
+    if (coverFiles.length) fd.append('cover', coverFiles[0]);
+
+    const imgFiles = $('#inputImages').files;
+    for (let i = 0; i < imgFiles.length; i++) fd.append('images[]', imgFiles[i]);
+
+    const webhook = $('#inputWebhook').value.trim();
+    if (webhook) fd.append('webhookUrl', webhook);
+
+    fd.append('enableComment', $('#inputComment').checked ? '1' : '0');
+
+    try {
+      const fetchOpts = { method: 'POST', body: fd, headers: getAuthHeaders() };
+      let res = await fetch('/api/publish', fetchOpts);
+
+      // Handle API key auth
+      if (res.status === 401) {
+        const savedKey = getApiKey();
+        const newKey = prompt('请输入 API Key（服务端已配置 API_KEY 鉴权）：', savedKey);
+        if (newKey !== null) {
+          setApiKey(newKey);
+          fetchOpts.headers = getAuthHeaders();
+          res = await fetch('/api/publish', fetchOpts);
+        } else {
+          throw new Error('需要 API Key 才能发布');
+        }
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        toast('发布成功！', 'success');
+        showPublishResult(data, true);
+      } else {
+        toast(data.error || '发布失败', 'error');
+        showPublishResult(data, false);
+      }
+    } catch (e) {
+      toast(e.message || '发布失败', 'error');
+      showPublishResult({ error: e.message }, false);
+    } finally {
+      btn.disabled = false;
+      $('#loadingOverlay').classList.remove('show');
+    }
+  };
+
+  function showPublishResult(data, success) {
+    const el = $('#publishResult');
+    el.classList.remove('hidden');
+
+    if (success) {
+      let coverHtml = '';
+      if (data.coverUrl) {
+        coverHtml = `
+          <div class="result-field">
+            <div class="result-field-label">封面</div>
+            <img src="${escapeHtml(data.coverUrl)}" class="cover-preview" alt="封面">
+          </div>`;
+      }
+      el.innerHTML = `
+        <div class="publish-result success">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <h3>发布成功</h3>
+          <div class="result-fields">
+            <div class="result-field">
+              <div class="result-field-label">标题</div>
+              <div class="result-field-value">${escapeHtml(data.title || '-')}</div>
+            </div>
+            <div class="result-field">
+              <div class="result-field-label">Media ID</div>
+              <div class="result-field-value">${escapeHtml(data.mediaId || '-')}</div>
+            </div>
+            ${coverHtml}
+            <div class="result-field">
+              <div class="result-field-label">发布时间</div>
+              <div class="result-field-value">${formatDate(data.publishedAt || data.createdAt)}</div>
+            </div>
+          </div>
+          <button class="btn btn-primary mt-4" onclick="resetPublishForm()">继续发布</button>
+        </div>`;
+    } else {
+      el.innerHTML = `
+        <div class="publish-result error">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <h3>发布失败</h3>
+          <div class="result-fields">
+            ${data.errorCode ? `<div class="result-field"><div class="result-field-label">错误代码</div><div class="result-field-value">${escapeHtml(String(data.errorCode))}</div></div>` : ''}
+            <div class="result-field">
+              <div class="result-field-label">错误信息</div>
+              <div class="result-field-value">${escapeHtml(data.error || data.message || '未知错误')}</div>
+            </div>
+            ${data.step ? `<div class="result-field"><div class="result-field-label">失败步骤</div><div class="result-field-value">${escapeHtml(data.step)}</div></div>` : ''}
+          </div>
+          <button class="btn btn-outline mt-4" onclick="$('#publishResult').classList.add('hidden')">关闭</button>
+        </div>`;
+    }
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  window.resetPublishForm = function() {
+    removeMdFile();
+    $('#inputAuthor').value = '';
+    $('#inputTheme').selectedIndex = 0;
+    $('#inputDigest').value = '';
+    document.querySelector('input[name="coverStrategy"][value="sharp"]').checked = true;
+    $('#aiPromptGroup').classList.add('hidden');
+    $('#inputCoverPrompt').value = '';
+    $('#inputCover').value = '';
+    $('#inputImages').value = '';
+    $('#inputWebhook').value = '';
+    $('#inputComment').checked = false;
+    $('#commentText').textContent = '关闭';
+    $('#publishResult').classList.add('hidden');
+  };
+
+  // ----- History -----
+  window.loadHistory = async function() {
+    const p = state.history.page;
+    const ps = state.history.pageSize;
+    let url = `/api/history?page=${p}&pageSize=${ps}`;
+    if (state.historyFilter) url += '&status=' + state.historyFilter;
+
+    try {
+      const data = await apiFetch(url);
+      state.history.items = data.items || [];
+      state.history.total = data.total || 0;
+      state.history.page = data.page || p;
+      renderHistory();
+    } catch (e) {
+      $('#historyBody').innerHTML = `<tr><td colspan="7" class="table-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <div>加载失败：${escapeHtml(e.message)}</div>
+      </td></tr>`;
+      $('#historyPagination').innerHTML = '';
+    }
+  };
+
+  function renderHistory() {
+    const items = state.history.items;
+    const tbody = $('#historyBody');
+
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="table-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        <div>暂无发布记录</div>
+      </td></tr>`;
+      $('#historyPagination').innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = items.map(it => {
+      const statusBadge = it.status === 'draft'
+        ? '<span class="badge badge-green"><span class="badge-dot"></span>草稿</span>'
+        : it.status === 'failed'
+        ? '<span class="badge badge-red"><span class="badge-dot"></span>失败</span>'
+        : `<span class="badge badge-gray">${escapeHtml(it.status || '-')}</span>`;
+
+      let whBadge = '<span class="badge badge-gray">-</span>';
+      if (it.webhookStatus === 'sent') whBadge = '<span class="badge badge-green">已发送</span>';
+      else if (it.webhookStatus === 'failed') whBadge = '<span class="badge badge-red">失败</span>';
+
+      const coverCell = it.coverUrl
+        ? `<img class="cover-thumb" src="${escapeHtml(it.coverUrl)}" alt="封面" onclick="showCoverPopup('${escapeHtml(it.coverUrl)}')" onerror="this.style.display='none'">`
+        : '<span style="color:var(--text-muted)">-</span>';
+
+      return `<tr>
+        <td><span class="table-title" title="${escapeHtml(it.title || '')}">${escapeHtml(it.title || '-')}</span></td>
+        <td>${escapeHtml(it.author || '-')}</td>
+        <td>${escapeHtml(it.theme || '-')}</td>
+        <td>${coverCell}</td>
+        <td>${statusBadge}</td>
+        <td>${whBadge}</td>
+        <td style="white-space:nowrap">${formatDate(it.createdAt)}</td>
+      </tr>`;
+    }).join('');
+
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const total = state.history.total;
+    const page = state.history.page;
+    const ps = state.history.pageSize;
+    const totalPages = Math.max(1, Math.ceil(total / ps));
+
+    const start = (page - 1) * ps + 1;
+    const end = Math.min(page * ps, total);
+
+    let btns = '';
+    btns += `<button class="page-btn" ${page <= 1 ? 'disabled' : ''} onclick="goHistoryPage(${page - 1})">上一页</button>`;
+
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== '...') {
+        pages.push('...');
+      }
+    }
+
+    pages.forEach(p => {
+      if (p === '...') {
+        btns += '<span style="padding:0 4px;color:var(--text-muted)">...</span>';
+      } else {
+        btns += `<button class="page-btn ${p === page ? 'active' : ''}" onclick="goHistoryPage(${p})">${p}</button>`;
+      }
+    });
+
+    btns += `<button class="page-btn" ${page >= totalPages ? 'disabled' : ''} onclick="goHistoryPage(${page + 1})">下一页</button>`;
+
+    $('#historyPagination').innerHTML = `
+      <div class="pagination-info">共 ${total} 条，第 ${start}-${end} 条</div>
+      <div class="pagination-btns">${btns}</div>
+    `;
+  }
+
+  window.goHistoryPage = function(p) {
+    state.history.page = Math.max(1, p);
+    loadHistory();
+  };
+
+  window.filterHistory = function(el, status) {
+    $$('#statusFilter .filter-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    state.historyFilter = status;
+    state.history.page = 1;
+    loadHistory();
+  };
+
+  window.showCoverPopup = function(url) {
+    $('#coverPopupImg').src = url;
+    $('#coverPopup').classList.add('show');
+  };
+
+  window.closeCoverPopup = function() {
+    $('#coverPopup').classList.remove('show');
+  };
+
+  // ----- Settings -----
+  window.saveApiKey = function() {
+    const val = $('#settingsApiKey').value.trim();
+    setApiKey(val);
+    toast(val ? 'API Key 已保存' : 'API Key 已清除', 'success');
+  };
+
+  window.clearApiKey = function() {
+    setApiKey('');
+    $('#settingsApiKey').value = '';
+    toast('API Key 已清除', 'success');
+  };
+
+  async function loadSettings() {
+    // Load saved API key into settings input
+    const savedKey = getApiKey();
+    if (savedKey) $('#settingsApiKey').value = savedKey;
+    try {
+      const [config, themes] = await Promise.all([
+        state.config ? state.config : apiFetch('/api/config'),
+        state.themes ? state.themes : apiFetch('/api/themes'),
+      ]);
+      state.config = config;
+      state.themes = themes;
+      renderSettings(config, themes);
+    } catch (e) {
+      toast('加载配置失败：' + e.message, 'error');
+    }
+  }
+
+  function renderSettings(cfg, themes) {
+    const items = [
+      { label: 'AppID', value: maskString(cfg.appid) },
+      { label: '默认作者', value: cfg.defaultAuthor || '-' },
+      { label: '默认主题', value: cfg.defaultTheme || '-' },
+      { label: '默认封面策略', value: cfg.defaultCoverStrategy || '-' },
+      { label: 'AI 封面', value: cfg.aiCoverConfigured ? '已配置' : '未配置' },
+      { label: 'Webhook', value: cfg.webhookConfigured ? '已配置' : '未配置' },
+    ];
+
+    $('#configGrid').innerHTML = items.map(it => `
+      <div class="settings-item">
+        <span class="settings-item-label">${it.label}</span>
+        <span class="settings-item-value">${escapeHtml(it.value)}</span>
+      </div>
+    `).join('');
+
+    let themesHtml = '<div class="theme-list">';
+    if (themes.builtin && themes.builtin.length) {
+      themes.builtin.forEach(t => {
+        themesHtml += `<span class="theme-tag builtin">${escapeHtml(t)}</span>`;
+      });
+    }
+    if (themes.custom && themes.custom.length) {
+      themes.custom.forEach(t => {
+        themesHtml += `<span class="theme-tag custom">${escapeHtml(t)}</span>`;
+      });
+    }
+    if ((!themes.builtin || !themes.builtin.length) && (!themes.custom || !themes.custom.length)) {
+      themesHtml += '<span style="color:var(--text-muted)">暂无可用主题</span>';
+    }
+    themesHtml += '</div>';
+    if (themes.builtin && themes.builtin.length) {
+      themesHtml += '<div class="form-hint mt-4" style="display:flex;gap:12px;flex-wrap:wrap;">';
+      themesHtml += '<span><span class="theme-tag builtin" style="font-size:11px;">示例</span> 内置主题</span>';
+      if (themes.custom && themes.custom.length) {
+        themesHtml += '<span><span class="theme-tag custom" style="font-size:11px;">示例</span> 自定义主题</span>';
+      }
+      themesHtml += '</div>';
+    }
+    $('#themesList').innerHTML = themesHtml;
+  }
+
+  // ----- Init -----
+  function init() {
+    setupDropzone();
+    handleRoute();
+    startHealthRefresh();
+
+    // Keyboard shortcut: Escape closes popup
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeCoverPopup();
+    });
+  }
+
+  // Expose $ for inline onclick
+  window.$ = $;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
