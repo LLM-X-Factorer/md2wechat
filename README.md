@@ -419,6 +419,10 @@ A：图片上传到微信图床需要 AppID 和 AppSecret 正确配置。检查 
 
 A：检查 `IMAGEN_API_KEY` 是否配置，以及 `/health` 中 `aiCoverAvailable` 是否为 `true`。API Key 可在 [Google AI Studio](https://aistudio.google.com/apikey) 获取。
 
+**Q：发布时报错 "description size out of limit (45004)"**
+
+A：微信限制摘要（digest）最长 120 个字符。v1.0.0+ 版本已自动截断超长摘要，如仍遇到此问题请更新到最新版本。
+
 **Q：能否支持定时发布？**
 
 A：微信草稿箱不支持定时发布，需要人工在公众号后台点击发布。定时投递到草稿箱的功能目前不在计划中。
