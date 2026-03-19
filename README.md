@@ -77,7 +77,7 @@ open http://localhost:3000
 启动后访问 `http://localhost:3000` 即可使用 Web 管理面板：
 
 - **仪表盘**：服务状态一览（微信配置、数据库、AI 封面、Token 缓存）
-- **发布文章**：拖拽上传 Markdown，选择主题和封面策略，一键发布
+- **发布文章**：拖拽整个文件夹或选择文件，自动识别 Markdown 和图片，选择主题和封面策略，一键发布
 - **发布历史**：分页查看所有发布记录，筛选状态，预览封面
 - **系统设置**：查看当前配置和可用主题
 
@@ -91,7 +91,20 @@ curl -X POST http://localhost:3000/api/publish \
   -F "theme=blue"
 ```
 
+附带图片的发布：
+
+```bash
+curl -X POST http://localhost:3000/api/publish \
+  -H "X-API-Key: your-api-key" \
+  -F "article=@output/article.md" \
+  -F "images[]=@output/images/img1.png" \
+  -F "images[]=@output/images/img2.png" \
+  -F "author=你的名字"
+```
+
 成功后登录微信公众号后台 → 草稿箱，即可看到文章。
+
+> **Web 面板提示**：你可以直接将包含 `.md` 文件和 `images/` 目录的整个文件夹拖入发布页面，系统会自动识别文章和图片文件。
 
 ---
 
