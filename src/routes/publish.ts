@@ -109,6 +109,7 @@ export function registerPublishRoute(
     } catch (err) {
       const pipelineErr = err as PipelineError;
       if (pipelineErr.code && pipelineErr.step) {
+        request.log.error({ code: pipelineErr.code, step: pipelineErr.step, message: pipelineErr.message }, 'Pipeline error');
         const statusCode = pipelineErr.code === 'WXAPI_ERROR' ? 502 : 500;
         return reply.status(statusCode).send({
           success: false,

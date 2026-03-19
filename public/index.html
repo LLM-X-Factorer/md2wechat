@@ -1912,10 +1912,12 @@ tr:hover td { background: var(--gray-50); }
 
       if (res.ok) {
         toast('发布成功！', 'success');
-        showPublishResult(data, true);
+        showPublishResult(data.data || data, true);
       } else {
-        toast(data.error || '发布失败', 'error');
-        showPublishResult(data, false);
+        const err = data.error || {};
+        const errMsg = typeof err === 'string' ? err : (err.message || '发布失败');
+        toast(errMsg, 'error');
+        showPublishResult(typeof err === 'object' ? err : data, false);
       }
     } catch (e) {
       toast(e.message || '发布失败', 'error');
@@ -1966,10 +1968,10 @@ tr:hover td { background: var(--gray-50); }
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           <h3>发布失败</h3>
           <div class="result-fields">
-            ${data.errorCode ? `<div class="result-field"><div class="result-field-label">错误代码</div><div class="result-field-value">${escapeHtml(String(data.errorCode))}</div></div>` : ''}
+            ${data.code ? `<div class="result-field"><div class="result-field-label">错误代码</div><div class="result-field-value">${escapeHtml(String(data.code))}</div></div>` : ''}
             <div class="result-field">
               <div class="result-field-label">错误信息</div>
-              <div class="result-field-value">${escapeHtml(data.error || data.message || '未知错误')}</div>
+              <div class="result-field-value">${escapeHtml(data.message || data.error || '未知错误')}</div>
             </div>
             ${data.step ? `<div class="result-field"><div class="result-field-label">失败步骤</div><div class="result-field-value">${escapeHtml(data.step)}</div></div>` : ''}
           </div>
