@@ -838,6 +838,172 @@ tr:hover td { background: var(--gray-50); }
 ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
 
+/* Smart Dropzone */
+.smart-dropzone {
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 48px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--gray-50);
+}
+
+.smart-dropzone:hover,
+.smart-dropzone.drag-over {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.smart-dropzone svg.dropzone-icon { width: 48px; height: 48px; color: var(--gray-400); margin-bottom: 12px; }
+.smart-dropzone.drag-over svg.dropzone-icon { color: var(--primary); }
+
+.smart-dropzone .dropzone-title { font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+.smart-dropzone .dropzone-hint { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+
+.smart-dropzone .dropzone-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.smart-dropzone .dropzone-actions .btn { pointer-events: auto; }
+
+.smart-dropzone input[type="file"] { display: none; }
+
+.smart-dropzone-fallback-link {
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-top: 8px;
+  display: inline-block;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.smart-dropzone-fallback-link:hover { color: var(--primary); }
+
+/* Detected files panel */
+.detected-files {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.detected-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.detected-section:last-child { border-bottom: none; }
+
+.detected-section-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detected-section-header svg { width: 14px; height: 14px; }
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+
+.image-thumb {
+  position: relative;
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+  text-align: center;
+  transition: box-shadow var(--transition);
+}
+
+.image-thumb:hover { box-shadow: var(--shadow-sm); }
+
+.image-thumb img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto 4px;
+  background: var(--gray-100);
+}
+
+.image-thumb .image-thumb-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80px;
+  margin: 0 auto;
+}
+
+.image-thumb .image-thumb-size {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.image-thumb .image-thumb-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition);
+  line-height: 1;
+  font-size: 14px;
+}
+
+.image-thumb:hover .image-thumb-remove { opacity: 1; }
+.image-thumb .image-thumb-remove:hover { background: var(--danger); }
+
+.detected-summary {
+  padding: 10px 16px;
+  background: var(--primary-light);
+  font-size: 13px;
+  color: #0a8f47;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detected-summary svg { width: 14px; height: 14px; }
+
+/* Manual file inputs (fallback) */
+.manual-inputs {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--gray-50);
+}
+
+.manual-inputs .form-group:last-child { margin-bottom: 0; }
+
 /* Utility */
 .hidden { display: none !important; }
 .text-center { text-align: center; }
@@ -917,16 +1083,35 @@ tr:hover td { background: var(--gray-50); }
       </div>
       <div class="page-body">
         <div id="publishForm">
-          <!-- Dropzone -->
+          <!-- Smart Dropzone -->
           <div class="form-group">
-            <label class="form-label">Markdown 文件<span class="required">*</span></label>
-            <div class="dropzone" id="mdDropzone">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <div class="dropzone-title">拖拽 .md 文件到此处</div>
-              <div class="dropzone-hint">或点击选择文件</div>
-              <input type="file" id="mdFileInput" accept=".md,.markdown,text/markdown">
+            <label class="form-label">文章文件<span class="required">*</span></label>
+            <div class="smart-dropzone" id="smartDropzone">
+              <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><polyline points="12 11 12 17"/><polyline points="9 14 12 11 15 14"/></svg>
+              <div class="dropzone-title">拖拽文件夹或文件到此处</div>
+              <div class="dropzone-hint">自动识别 Markdown 和图片文件</div>
+              <div class="dropzone-actions" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-outline btn-sm" id="btnSelectFolder" onclick="document.getElementById('folderInput').click()">选择文件夹</button>
+                <button type="button" class="btn btn-outline btn-sm" id="btnSelectFiles" onclick="document.getElementById('filesInput').click()">选择文件</button>
+              </div>
+              <input type="file" id="folderInput" webkitdirectory>
+              <input type="file" id="filesInput" multiple accept=".md,.markdown,.png,.jpg,.jpeg,.gif,.webp">
+              <div class="smart-dropzone-fallback-link" id="manualInputToggle" onclick="event.stopPropagation(); toggleManualInputs()">或选择单个文件</div>
             </div>
-            <div id="mdFilePreview" class="hidden"></div>
+            <!-- Manual fallback inputs -->
+            <div class="manual-inputs hidden" id="manualInputs">
+              <div class="form-group">
+                <label class="form-label">Markdown 文件<span class="required">*</span></label>
+                <input type="file" class="form-input" id="manualMdInput" accept=".md,.markdown,text/markdown" style="padding:6px 8px;">
+              </div>
+              <div class="form-group">
+                <label class="form-label">附加图片</label>
+                <input type="file" class="form-input" id="manualImagesInput" accept="image/*" multiple style="padding:6px 8px;">
+                <div class="form-hint">文章中引用的图片</div>
+              </div>
+            </div>
+            <!-- Detected files preview -->
+            <div id="detectedFilesPanel" class="hidden"></div>
           </div>
 
           <div class="form-row">
@@ -979,17 +1164,10 @@ tr:hover td { background: var(--gray-50); }
             <textarea class="form-textarea" id="inputCoverPrompt" placeholder="描述你想要的封面风格..." rows="2"></textarea>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">自定义封面</label>
-              <input type="file" class="form-input" id="inputCover" accept="image/*" style="padding:6px 8px;">
-              <div class="form-hint">上传自定义封面图片（可选）</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">附加图片</label>
-              <input type="file" class="form-input" id="inputImages" accept="image/*" multiple style="padding:6px 8px;">
-              <div class="form-hint">文章中引用的图片</div>
-            </div>
+          <div class="form-group">
+            <label class="form-label">自定义封面</label>
+            <input type="file" class="form-input" id="inputCover" accept="image/*" style="padding:6px 8px;">
+            <div class="form-hint">上传自定义封面图片（可选，与文章图片分开管理）</div>
           </div>
 
           <div class="form-group">
@@ -1172,6 +1350,8 @@ tr:hover td { background: var(--gray-50); }
     history: { items: [], total: 0, page: 1, pageSize: 20 },
     historyFilter: '',
     mdFile: null,
+    imageFiles: [],
+    imageObjectURLs: [],
     healthTimer: null,
   };
 
@@ -1379,27 +1559,87 @@ tr:hover td { background: var(--gray-50); }
   }
 
   // ----- Publish -----
+  const MD_EXTS = /\.(md|markdown)$/i;
+  const IMG_EXTS = /\.(png|jpe?g|gif|webp)$/i;
+
   function setupDropzone() {
-    const dz = $('#mdDropzone');
-    const input = $('#mdFileInput');
+    const dz = $('#smartDropzone');
+    const folderInput = $('#folderInput');
+    const filesInput = $('#filesInput');
 
-    dz.addEventListener('click', () => input.click());
-
-    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-    dz.addEventListener('dragleave', e => { e.preventDefault(); dz.classList.remove('drag-over'); });
-    dz.addEventListener('drop', e => {
-      e.preventDefault();
-      dz.classList.remove('drag-over');
-      const files = e.dataTransfer.files;
-      if (files.length && files[0].name.match(/\.(md|markdown)$/i)) {
-        handleMdFile(files[0]);
-      } else {
-        toast('请上传 .md 格式文件', 'error');
+    // Click on the dropzone background opens folder picker
+    dz.addEventListener('click', (e) => {
+      if (e.target === dz || e.target.classList.contains('dropzone-icon') ||
+          e.target.classList.contains('dropzone-title') || e.target.classList.contains('dropzone-hint')) {
+        folderInput.click();
       }
     });
 
-    input.addEventListener('change', () => {
-      if (input.files.length) handleMdFile(input.files[0]);
+    // Drag & drop
+    dz.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag-over'); });
+    dz.addEventListener('drop', async e => {
+      e.preventDefault();
+      e.stopPropagation();
+      dz.classList.remove('drag-over');
+
+      const items = e.dataTransfer.items;
+      if (items && items.length > 0 && items[0].webkitGetAsEntry) {
+        // Use webkitGetAsEntry for folder traversal
+        const allFiles = [];
+        const entries = [];
+        for (let i = 0; i < items.length; i++) {
+          const entry = items[i].webkitGetAsEntry();
+          if (entry) entries.push(entry);
+        }
+        await traverseEntries(entries, allFiles);
+        processDetectedFiles(allFiles);
+      } else {
+        // Fallback: plain file list
+        const files = Array.from(e.dataTransfer.files);
+        processDetectedFiles(files);
+      }
+    });
+
+    // Folder input change
+    folderInput.addEventListener('change', () => {
+      if (folderInput.files.length) {
+        processDetectedFiles(Array.from(folderInput.files));
+        folderInput.value = '';
+      }
+    });
+
+    // Files input change
+    filesInput.addEventListener('change', () => {
+      if (filesInput.files.length) {
+        processDetectedFiles(Array.from(filesInput.files));
+        filesInput.value = '';
+      }
+    });
+
+    // Manual fallback inputs
+    $('#manualMdInput').addEventListener('change', function() {
+      if (this.files.length) {
+        const file = this.files[0];
+        if (MD_EXTS.test(file.name)) {
+          processDetectedFiles(Array.from(this.files));
+        } else {
+          toast('请选择 .md 格式文件', 'error');
+        }
+      }
+    });
+
+    $('#manualImagesInput').addEventListener('change', function() {
+      if (this.files.length) {
+        const newImages = Array.from(this.files).filter(f => IMG_EXTS.test(f.name));
+        if (newImages.length) {
+          newImages.forEach(f => {
+            state.imageFiles.push(f);
+            state.imageObjectURLs.push(URL.createObjectURL(f));
+          });
+          renderDetectedFiles();
+        }
+      }
     });
 
     // Cover strategy toggle
@@ -1415,37 +1655,170 @@ tr:hover td { background: var(--gray-50); }
     });
   }
 
-  function handleMdFile(file) {
-    state.mdFile = file;
-    const preview = $('#mdFilePreview');
-    preview.classList.remove('hidden');
+  // Recursively traverse directory entries from drag & drop
+  async function traverseEntries(entries, result) {
+    for (const entry of entries) {
+      if (entry.isFile) {
+        const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+        result.push(file);
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        const children = await new Promise((resolve, reject) => {
+          const all = [];
+          const readBatch = () => {
+            reader.readEntries(entries => {
+              if (entries.length === 0) {
+                resolve(all);
+              } else {
+                all.push(...entries);
+                readBatch();
+              }
+            }, reject);
+          };
+          readBatch();
+        });
+        await traverseEntries(children, result);
+      }
+    }
+  }
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const content = e.target.result;
-      const previewText = content.length > 1000 ? content.slice(0, 1000) + '\n...' : content;
-      preview.innerHTML = `
-        <div class="file-preview">
-          <div>
-            <div class="file-name">${escapeHtml(file.name)}</div>
-            <div class="file-size">${formatSize(file.size)}</div>
-          </div>
-          <span class="file-remove" onclick="removeMdFile()" title="移除文件">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </span>
-        </div>
-        <div class="md-preview">${escapeHtml(previewText)}</div>
-      `;
-    };
-    reader.readAsText(file);
+  // Process a list of Files: categorize and update state
+  function processDetectedFiles(files) {
+    const mdFiles = [];
+    const imgFiles = [];
+    let skipped = 0;
+
+    files.forEach(f => {
+      if (MD_EXTS.test(f.name)) {
+        mdFiles.push(f);
+      } else if (IMG_EXTS.test(f.name)) {
+        imgFiles.push(f);
+      } else {
+        skipped++;
+      }
+    });
+
+    if (mdFiles.length === 0 && imgFiles.length === 0) {
+      toast('未检测到 Markdown 或图片文件', 'error');
+      return;
+    }
+
+    // Handle MD file
+    if (mdFiles.length > 0) {
+      if (mdFiles.length > 1) {
+        toast('检测到多个 Markdown 文件，已使用第一个: ' + mdFiles[0].name, 'info');
+      }
+      state.mdFile = mdFiles[0];
+    }
+
+    // Handle images: add to existing
+    if (imgFiles.length > 0) {
+      imgFiles.forEach(f => {
+        state.imageFiles.push(f);
+        state.imageObjectURLs.push(URL.createObjectURL(f));
+      });
+    }
+
+    if (skipped > 0) {
+      toast('已跳过 ' + skipped + ' 个不支持的文件', 'info');
+    }
+
+    renderDetectedFiles();
+  }
+
+  // Render the detected files preview panel
+  function renderDetectedFiles() {
+    const panel = $('#detectedFilesPanel');
+
+    if (!state.mdFile && state.imageFiles.length === 0) {
+      panel.classList.add('hidden');
+      panel.innerHTML = '';
+      return;
+    }
+
+    panel.classList.remove('hidden');
+    let html = '<div class="detected-files">';
+
+    // Summary line
+    const mdCount = state.mdFile ? 1 : 0;
+    const imgCount = state.imageFiles.length;
+    html += '<div class="detected-summary">';
+    html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+    html += '已识别: ' + mdCount + ' 篇文章, ' + imgCount + ' 张图片';
+    html += '</div>';
+
+    // Article section
+    if (state.mdFile) {
+      html += '<div class="detected-section">';
+      html += '<div class="detected-section-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> 文章</div>';
+      html += '<div class="file-preview">';
+      html += '<div><div class="file-name">' + escapeHtml(state.mdFile.name) + '</div>';
+      html += '<div class="file-size">' + formatSize(state.mdFile.size) + '</div></div>';
+      html += '<span class="file-remove" onclick="removeMdFile()" title="移除文章"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>';
+      html += '</div>';
+      html += '<div class="md-preview" id="mdContentPreview">加载预览中...</div>';
+      html += '</div>';
+    }
+
+    // Images section
+    if (state.imageFiles.length > 0) {
+      html += '<div class="detected-section">';
+      html += '<div class="detected-section-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> 图片 (' + state.imageFiles.length + ')</div>';
+      html += '<div class="image-grid">';
+      state.imageFiles.forEach((f, i) => {
+        html += '<div class="image-thumb">';
+        html += '<div class="image-thumb-remove" onclick="removeImage(' + i + ')" title="移除">&times;</div>';
+        html += '<img src="' + state.imageObjectURLs[i] + '" alt="' + escapeHtml(f.name) + '">';
+        html += '<div class="image-thumb-name" title="' + escapeHtml(f.name) + '">' + escapeHtml(f.name) + '</div>';
+        html += '<div class="image-thumb-size">' + formatSize(f.size) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    panel.innerHTML = html;
+
+    // Load MD preview async
+    if (state.mdFile) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        const previewText = content.length > 1000 ? content.slice(0, 1000) + '\n...' : content;
+        const el = document.getElementById('mdContentPreview');
+        if (el) el.textContent = previewText;
+      };
+      reader.readAsText(state.mdFile);
+    }
   }
 
   window.removeMdFile = function() {
     state.mdFile = null;
-    $('#mdFileInput').value = '';
-    $('#mdFilePreview').classList.add('hidden');
-    $('#mdFilePreview').innerHTML = '';
+    renderDetectedFiles();
   };
+
+  window.removeImage = function(index) {
+    if (index >= 0 && index < state.imageFiles.length) {
+      URL.revokeObjectURL(state.imageObjectURLs[index]);
+      state.imageFiles.splice(index, 1);
+      state.imageObjectURLs.splice(index, 1);
+      renderDetectedFiles();
+    }
+  };
+
+  window.toggleManualInputs = function() {
+    const el = $('#manualInputs');
+    el.classList.toggle('hidden');
+  };
+
+  function clearAllDetectedFiles() {
+    state.mdFile = null;
+    state.imageObjectURLs.forEach(url => URL.revokeObjectURL(url));
+    state.imageFiles = [];
+    state.imageObjectURLs = [];
+    renderDetectedFiles();
+  }
 
   async function loadThemes() {
     if (state.themes) {
@@ -1511,8 +1884,7 @@ tr:hover td { background: var(--gray-50); }
     const coverFiles = $('#inputCover').files;
     if (coverFiles.length) fd.append('cover', coverFiles[0]);
 
-    const imgFiles = $('#inputImages').files;
-    for (let i = 0; i < imgFiles.length; i++) fd.append('images[]', imgFiles[i]);
+    for (let i = 0; i < state.imageFiles.length; i++) fd.append('images[]', state.imageFiles[i]);
 
     const webhook = $('#inputWebhook').value.trim();
     if (webhook) fd.append('webhookUrl', webhook);
@@ -1609,7 +1981,10 @@ tr:hover td { background: var(--gray-50); }
   }
 
   window.resetPublishForm = function() {
-    removeMdFile();
+    clearAllDetectedFiles();
+    $('#manualInputs').classList.add('hidden');
+    $('#manualMdInput').value = '';
+    $('#manualImagesInput').value = '';
     $('#inputAuthor').value = '';
     $('#inputTheme').selectedIndex = 0;
     $('#inputDigest').value = '';
@@ -1617,7 +1992,6 @@ tr:hover td { background: var(--gray-50); }
     $('#aiPromptGroup').classList.add('hidden');
     $('#inputCoverPrompt').value = '';
     $('#inputCover').value = '';
-    $('#inputImages').value = '';
     $('#inputWebhook').value = '';
     $('#inputComment').checked = false;
     $('#commentText').textContent = '关闭';
