@@ -71,7 +71,8 @@ export class PublishPipeline {
     const title = parsed.metadata.title ?? '未命名文章';
     const author = options.author ?? parsed.metadata.author ?? this.config.defaultAuthor;
     const theme = options.theme ?? parsed.metadata.theme ?? this.config.defaultTheme;
-    const digest = options.digest ?? parsed.metadata.digest ?? title;
+    const rawDigest = options.digest ?? parsed.metadata.digest ?? title;
+    const digest = rawDigest.length > 120 ? rawDigest.slice(0, 117) + '...' : rawDigest;
     const enableComment = options.enableComment ?? parsed.metadata.enableComment ?? false;
     const coverStrategy = options.coverStrategy ?? this.config.defaultCoverStrategy;
 
