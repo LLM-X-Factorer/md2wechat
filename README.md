@@ -201,7 +201,27 @@ curl -X POST http://localhost:3000/api/publish \
 
 ### GET /api/themes
 
-列出所有可用主题（内置 + 自定义）。
+列出所有可用主题（内置 + 自定义）。自定义主题返回完整元信息：
+
+```json
+{
+  "builtin": ["black", "blue", "brown", "default", "green", "orange", "red", "yellow"],
+  "custom": [
+    {
+      "name": "paperweekly",
+      "displayName": "论文解读",
+      "description": "适用于学术论文解读类文章...",
+      "category": "学术内容",
+      "headingStyle": "part-number",
+      "hasTemplate": true
+    }
+  ]
+}
+```
+
+### GET /api/themes/:name/template
+
+下载指定自定义主题的写作模板（Markdown 文件）。业务人员可基于模板快速创建符合规范的文章。
 
 ### GET /api/config
 
@@ -221,9 +241,10 @@ curl -X POST http://localhost:3000/api/publish \
 
 ```
 my-theme/
-├── theme.css       # 主题样式
-├── compat.css      # 可选：覆盖微信兼容性 CSS
-└── theme.json      # 主题元数据
+├── theme.css       # 主题样式（必需）
+├── theme.json      # 主题元数据（必需）
+├── template.md     # 可选：写作模板，供业务人员下载参考
+└── compat.css      # 可选：覆盖微信兼容性 CSS
 ```
 
 **theme.json**：
@@ -233,11 +254,24 @@ my-theme/
   "name": "my-theme",
   "displayName": "我的主题",
   "version": "1.0.0",
+  "description": "主题用途说明，会在前端选择时展示",
+  "category": "分类标签",
+  "headingStyle": "default",
   "compatOverrides": {
     "highlight": true
   }
 }
 ```
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `name` | ✅ | 主题唯一标识，与目录名一致 |
+| `displayName` | ✅ | 前端显示的中文名称 |
+| `version` | ✅ | 语义化版本号 |
+| `description` | — | 用途说明，前端选择主题时展示 |
+| `category` | — | 分类标签（如"学术内容"、"人物专访"） |
+| `headingStyle` | — | H2 自动转换格式：`default`（不转换）/ `part-number`（Part.01）/ `chinese-number`（第一部分） |
+| `compatOverrides` | — | 覆盖默认微信兼容性 CSS |
 
 **docker-compose.yml** 中添加挂载：
 
@@ -332,7 +366,9 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ---
 
-## 内置主题
+## 主题系统
+
+### 内置主题（纯配色）
 
 | 主题名 | 风格 |
 |--------|------|
@@ -344,6 +380,24 @@ docker-compose -f docker-compose.prod.yml up -d
 | `brown` | 棕色系 |
 | `black` | 深色 |
 | `orange` | 橙色系 |
+
+### 定制主题（含排版模板）
+
+定制主题在配色之上提供 **章节自动编号** 和 **写作模板**，适用于有固定内容规范的业务场景。
+
+| 主题名 | 显示名 | 章节格式 | 适用场景 |
+|--------|--------|----------|----------|
+| `paperweekly` | 论文解读 | Part.01 / Part.02 … | 学术论文解读类文章 |
+| `student-share` | 学员经验分享 | Part.01 / Part.02 … | 保研/读博/转行经历分享 |
+| `values` | 价值观人物 | 第一部分 / 第二部分 … | 教师/员工人物专访 |
+
+**使用方式**：
+
+1. 在 Web 面板选择定制主题，点击"下载写作模板"获取 `template.md`
+2. 按模板结构填写内容（用 `##` 标记各章节标题）
+3. 发布时系统自动将 `##` 转换为对应的章节编号格式
+
+**章节编号说明**：定制主题的 `##`（H2 标题）会被自动转换为装饰性编号。`###`（H3 及以下）不受影响，可自由使用。
 
 ---
 
@@ -360,8 +414,11 @@ md2wechat/
 │   └── index.html      # Web 管理面板（单文件 SPA）
 ├── assets/
 │   └── backgrounds/    # 内置封面背景图
+├── themes/             # 定制主题目录（容器挂载）
+│   ├── paperweekly/    # 论文解读主题
+│   ├── student-share/  # 学员经验分享主题
+│   └── values/         # 价值观人物主题
 ├── config/             # 用户配置目录（容器挂载）
-├── themes/             # 用户自定义主题目录（容器挂载）
 ├── data/               # SQLite 数据文件目录（容器挂载）
 ├── Dockerfile
 ├── docker-compose.yml
