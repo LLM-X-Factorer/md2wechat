@@ -1,0 +1,8 @@
+{
+  "name": "values",
+  "displayName": "价值观人物",
+  "version": "1.0.0",
+  "description": "适用于教师/员工人物专访类文章。自动生成中文编号章节（第一部分、第二部分……），温暖沉稳配色，金色引用块突出金句。",
+  "category": "人物专访",
+  "headingStyle": "chinese-number"
+}

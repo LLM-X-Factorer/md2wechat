@@ -7,3 +7,4 @@ data/*.db-wal
 *.log
 docs/
 test_article.md
+themes/refs/

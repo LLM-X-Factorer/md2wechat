@@ -1,0 +1,8 @@
+{
+  "name": "student-share",
+  "displayName": "学员经验分享",
+  "version": "1.0.0",
+  "description": "适用于学员个人经历分享类文章（保研、读博、转行等）。自动生成 Part.XX 章节编号，蓝色标题配色，深色引言块突出故事背景。",
+  "category": "学员故事",
+  "headingStyle": "part-number"
+}

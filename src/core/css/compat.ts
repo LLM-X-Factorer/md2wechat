@@ -152,7 +152,8 @@ pre,
 hr,
 section.img-wrapper,
 section.tbl-wrapper,
-section.math-block {
+section.math-block,
+section.theme-heading {
   margin-left: 0 !important;
   margin-right: 0 !important;
 }

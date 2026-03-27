@@ -28,7 +28,7 @@ jobs:
               sudo chown $USER:$USER "$DEPLOY_DIR"
               cd "$DEPLOY_DIR"
               git init
-              git remote add origin git@github.com:sawyerbutton/md2wechat.git
+              git remote add origin git@github.com:LLM-X-Factorer/md2wechat.git
             fi
 
             cd "$DEPLOY_DIR"

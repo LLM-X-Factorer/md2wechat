@@ -69,11 +69,25 @@ export interface CompatCssConfig {
   layout: string;
 }
 
+export type HeadingStyle = 'default' | 'part-number' | 'chinese-number';
+
 export interface ThemeManifest {
   name: string;
   displayName: string;
   version: string;
+  description?: string;
+  category?: string;
+  headingStyle?: HeadingStyle;
   compatOverrides?: Partial<Record<keyof CompatCssConfig, boolean>>;
+}
+
+export interface ThemeInfo {
+  name: string;
+  displayName: string;
+  description?: string;
+  category?: string;
+  headingStyle?: HeadingStyle;
+  hasTemplate: boolean;
 }
 
 export interface PublishRecord {

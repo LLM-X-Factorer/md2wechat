@@ -1,0 +1,182 @@
+/* Values 价值观人物主题 */
+
+html {
+  font-size: 16px;
+}
+
+html, body {
+  background-color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: #333333;
+  line-height: 1.8;
+}
+
+#write {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+/* 标题 - 深色沉稳 */
+h1 {
+  font-size: 22px;
+  font-weight: 900;
+  color: #2c3e50;
+  line-height: 1.5;
+  margin: 0.8em 3% 1.2em;
+  padding: 0;
+  border: none;
+  text-align: center;
+}
+
+/* 中文编号章节标题 */
+section.theme-heading {
+  margin: 2.2em 3% 1em;
+  padding: 0;
+}
+
+section.theme-heading .theme-heading-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a3a5c;
+  margin: 0;
+  padding: 0 0 0.4em;
+  border-bottom: 2px solid #1a3a5c;
+  line-height: 1.4;
+}
+
+h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 1.8em 3% 0.8em;
+  padding: 0;
+  border: none;
+}
+
+h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #555555;
+  margin: 1.5em 3% 0.6em;
+  padding: 0;
+  border: none;
+}
+
+/* 正文 - 温暖有力 */
+p {
+  margin: 1em 3%;
+  font-size: 15px;
+  line-height: 2;
+  color: #333333;
+  text-align: justify;
+}
+
+/* 引用块 - 金句/例如样式 */
+blockquote, q {
+  margin: 1.5em 3%;
+  padding: 1em 1.5em;
+  background: #fdf6ec;
+  border: none;
+  border-left: 4px solid #e6a23c;
+  border-radius: 0 6px 6px 0;
+  color: #7d6530;
+  quotes: none;
+}
+
+blockquote p,
+q p {
+  color: #7d6530 !important;
+}
+
+/* 加粗强调 - 蓝色 */
+strong {
+  color: #1a3a5c;
+  font-weight: 700;
+}
+
+/* 链接 */
+a {
+  color: #e6a23c;
+  text-decoration: none;
+}
+
+/* 图片 */
+section.img-wrapper {
+  margin: 1.5em 3%;
+  text-align: center;
+}
+
+section.img-wrapper img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* 列表 */
+ul, ol {
+  margin: 0.8em 3%;
+  padding-left: 1.5em;
+}
+
+ul li {
+  list-style-type: disc;
+  list-style-position: outside;
+}
+
+ol li {
+  list-style-type: decimal;
+  list-style-position: outside;
+}
+
+li {
+  margin: 0.4em 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #333333;
+}
+
+/* 代码块 */
+pre code {
+  font-size: 13px;
+  color: #d4d4d4;
+  background-color: #1e1e1e;
+  border-radius: 6px;
+  padding: 1em;
+  display: block;
+}
+
+code {
+  color: #e6a23c;
+  background: #fdf6ec;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+
+/* 表格 */
+table {
+  margin: 1.2em 3%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  background: #fdf6ec;
+  font-weight: 700;
+  text-align: left;
+  padding: 10px 14px;
+  border: 1px solid #e6dcc8;
+  color: #7d6530;
+}
+
+td {
+  padding: 10px 14px;
+  border: 1px solid #e6dcc8;
+  vertical-align: top;
+}
+
+/* 分割线 */
+hr {
+  border: none;
+  border-top: 1px solid #e6dcc8;
+  margin: 2em 3%;
+}

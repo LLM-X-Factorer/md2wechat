@@ -669,6 +669,49 @@ tr:hover td { background: var(--gray-50); }
 .theme-tag.builtin { border-color: var(--primary); background: var(--primary-light); color: #0a8f47; }
 .theme-tag.custom { border-color: var(--info); background: var(--info-light); color: var(--info); }
 
+.theme-info {
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: var(--gray-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--gray-700);
+}
+.theme-info .theme-info-category {
+  display: inline-block;
+  padding: 1px 8px;
+  background: var(--info-light);
+  color: var(--info);
+  border-radius: 10px;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.theme-info .theme-info-desc {
+  margin: 0;
+}
+.theme-info .theme-info-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+.theme-info .theme-info-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--info);
+  border: 1px solid var(--info);
+  border-radius: var(--radius);
+  text-decoration: none;
+  cursor: pointer;
+}
+.theme-info .theme-info-actions a:hover {
+  background: var(--info-light);
+}
+
 .env-hint {
   background: var(--warning-light);
   border-radius: var(--radius);
@@ -1121,9 +1164,10 @@ tr:hover td { background: var(--gray-50); }
             </div>
             <div class="form-group">
               <label class="form-label">主题</label>
-              <select class="form-select" id="inputTheme">
+              <select class="form-select" id="inputTheme" onchange="handleThemeChange()">
                 <option value="">加载中...</option>
               </select>
+              <div id="themeInfo" class="theme-info" style="display:none;"></div>
             </div>
           </div>
 
@@ -1838,17 +1882,52 @@ tr:hover td { background: var(--gray-50); }
     let html = '<option value="">默认主题</option>';
     const t = state.themes;
     if (t.builtin && t.builtin.length) {
-      html += '<optgroup label="内置主题">';
+      html += '<optgroup label="内置主题（纯配色）">';
       t.builtin.forEach(n => { html += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`; });
       html += '</optgroup>';
     }
     if (t.custom && t.custom.length) {
-      html += '<optgroup label="自定义主题">';
-      t.custom.forEach(n => { html += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`; });
+      html += '<optgroup label="定制主题（含排版模板）">';
+      t.custom.forEach(c => {
+        const label = c.displayName ? `${escapeHtml(c.displayName)}（${escapeHtml(c.name)}）` : escapeHtml(c.name);
+        html += `<option value="${escapeHtml(c.name)}">${label}</option>`;
+      });
       html += '</optgroup>';
     }
     sel.innerHTML = html;
   }
+
+  window.handleThemeChange = function() {
+    const sel = $('#inputTheme');
+    const val = sel.value;
+    const infoEl = $('#themeInfo');
+    const t = state.themes;
+    if (!val || !t || !t.custom) {
+      infoEl.style.display = 'none';
+      return;
+    }
+    const custom = t.custom.find(c => c.name === val);
+    if (!custom) {
+      infoEl.style.display = 'none';
+      return;
+    }
+    let html = '';
+    if (custom.category) {
+      html += `<span class="theme-info-category">${escapeHtml(custom.category)}</span>`;
+    }
+    if (custom.description) {
+      html += `<p class="theme-info-desc">${escapeHtml(custom.description)}</p>`;
+    }
+    html += '<div class="theme-info-actions">';
+    if (custom.hasTemplate) {
+      html += `<a href="/api/themes/${encodeURIComponent(custom.name)}/template" download>` +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+        '下载写作模板</a>';
+    }
+    html += '</div>';
+    infoEl.innerHTML = html;
+    infoEl.style.display = 'block';
+  };
 
   window.handlePublish = async function() {
     if (!state.mdFile) {
@@ -1989,6 +2068,7 @@ tr:hover td { background: var(--gray-50); }
     $('#manualImagesInput').value = '';
     $('#inputAuthor').value = '';
     $('#inputTheme').selectedIndex = 0;
+    $('#themeInfo').style.display = 'none';
     $('#inputDigest').value = '';
     document.querySelector('input[name="coverStrategy"][value="sharp"]').checked = true;
     $('#aiPromptGroup').classList.add('hidden');
@@ -2178,7 +2258,9 @@ tr:hover td { background: var(--gray-50); }
     }
     if (themes.custom && themes.custom.length) {
       themes.custom.forEach(t => {
-        themesHtml += `<span class="theme-tag custom">${escapeHtml(t)}</span>`;
+        const label = t.displayName ? `${escapeHtml(t.displayName)}` : escapeHtml(t.name || t);
+        const title = t.description ? ` title="${escapeHtml(t.description)}"` : '';
+        themesHtml += `<span class="theme-tag custom"${title}>${label}</span>`;
       });
     }
     if ((!themes.builtin || !themes.builtin.length) && (!themes.custom || !themes.custom.length)) {
@@ -2189,7 +2271,7 @@ tr:hover td { background: var(--gray-50); }
       themesHtml += '<div class="form-hint mt-4" style="display:flex;gap:12px;flex-wrap:wrap;">';
       themesHtml += '<span><span class="theme-tag builtin" style="font-size:11px;">示例</span> 内置主题</span>';
       if (themes.custom && themes.custom.length) {
-        themesHtml += '<span><span class="theme-tag custom" style="font-size:11px;">示例</span> 自定义主题</span>';
+        themesHtml += '<span><span class="theme-tag custom" style="font-size:11px;">示例</span> 定制主题（悬停查看说明）</span>';
       }
       themesHtml += '</div>';
     }

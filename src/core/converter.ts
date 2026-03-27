@@ -6,7 +6,7 @@ import hljs from 'highlight.js';
 import MarkdownIt from 'markdown-it';
 import mathjax3 from 'markdown-it-mathjax3';
 import { getCompatCss, loadThemeCompatOverrides } from './css/compat.js';
-import type { ArticleMetadata } from '../types/index.js';
+import type { ArticleMetadata, HeadingStyle, ThemeInfo, ThemeManifest } from '../types/index.js';
 
 const LANGUAGE_ALIASES: Record<string, string | null> = {
   'c#': 'csharp',
@@ -560,6 +560,52 @@ function loadThemeCss(theme: string | undefined, themesDir: string): string {
   }
 }
 
+function loadThemeManifest(themesDir: string, theme: string | undefined): ThemeManifest | undefined {
+  const resolvedTheme = (theme ?? '').trim();
+  if (!resolvedTheme) return undefined;
+  const manifestPath = path.join(themesDir, resolvedTheme, 'theme.json');
+  if (!fs.existsSync(manifestPath)) return undefined;
+  try {
+    return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return undefined;
+  }
+}
+
+const CHINESE_NUMBERS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
+  '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
+
+function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle): void {
+  if (headingStyle === 'default') return;
+
+  let h2Index = 0;
+  $('h2').each((_, element) => {
+    const $h2 = $(element);
+    const text = $h2.text().trim();
+    h2Index++;
+
+    if (headingStyle === 'part-number') {
+      const num = String(h2Index).padStart(2, '0');
+      $h2.replaceWith(
+        `<section class="theme-heading" data-wxgzh="heading">` +
+        `<section class="theme-heading-number">` +
+        `<span class="theme-heading-part">Part.</span>` +
+        `<span class="theme-heading-num">${num}</span>` +
+        `</section>` +
+        `<h2 class="theme-heading-title">${text}</h2>` +
+        `</section>`
+      );
+    } else if (headingStyle === 'chinese-number') {
+      const label = CHINESE_NUMBERS[h2Index - 1] ?? String(h2Index);
+      $h2.replaceWith(
+        `<section class="theme-heading" data-wxgzh="heading">` +
+        `<h2 class="theme-heading-title">第${label}部分：${text}</h2>` +
+        `</section>`
+      );
+    }
+  });
+}
+
 function loadCustomCss(themesDir: string): string {
   const customCssPath = path.join(getBuiltinThemesDir(), 'custom.css');
   try {
@@ -598,6 +644,10 @@ export function renderMarkdownToHtml(
   normalizeTables($);
   normalizeBlockquoteSoftBreaks($);
   normalizeMathFormulas($);
+
+  const manifest = loadThemeManifest(options.themesDir, metadata.theme);
+  const headingStyle = manifest?.headingStyle ?? 'default';
+  transformHeadings($, headingStyle);
 
   const themeCss = loadThemeCss(metadata.theme, options.themesDir);
   const customCss = loadCustomCss(options.themesDir);
@@ -651,4 +701,43 @@ export function listCustomThemes(themesDir: string): string[] {
   } catch {
     return [];
   }
+}
+
+export function listCustomThemeDetails(themesDir: string): ThemeInfo[] {
+  try {
+    return fs.readdirSync(themesDir)
+      .filter((entry) => {
+        const manifestPath = path.join(themesDir, entry, 'theme.json');
+        return fs.existsSync(manifestPath);
+      })
+      .map((entry) => {
+        const manifestPath = path.join(themesDir, entry, 'theme.json');
+        const templatePath = path.join(themesDir, entry, 'template.md');
+        try {
+          const manifest: ThemeManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          return {
+            name: manifest.name || entry,
+            displayName: manifest.displayName || entry,
+            description: manifest.description,
+            category: manifest.category,
+            headingStyle: manifest.headingStyle,
+            hasTemplate: fs.existsSync(templatePath),
+          };
+        } catch {
+          return {
+            name: entry,
+            displayName: entry,
+            hasTemplate: fs.existsSync(templatePath),
+          };
+        }
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
+}
+
+export function getThemeTemplatePath(themesDir: string, themeName: string): string | null {
+  const templatePath = path.join(themesDir, themeName, 'template.md');
+  return fs.existsSync(templatePath) ? templatePath : null;
 }
