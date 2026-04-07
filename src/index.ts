@@ -10,6 +10,7 @@ import { registerHistoryRoute } from './routes/history.js';
 import { registerThemesRoute } from './routes/themes.js';
 import { registerConfigRoutes } from './routes/config.js';
 import { registerStaticRoute } from './routes/static.js';
+import { isAuthEnabled, checkAuth, verifyPassword, getTokenCookie, getClearCookie, getLoginPageHtml } from './core/auth.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -39,20 +40,47 @@ async function main(): Promise<void> {
     },
   });
 
-  // API key auth hook
-  if (config.apiKey) {
-    app.addHook('onRequest', async (request, reply) => {
-      // Skip auth for health check and web UI
-      if (request.url === '/health' || request.url === '/') return;
+  // Auth endpoints (always accessible)
+  app.post<{ Body: { password: string } }>('/api/console-login', async (request, reply) => {
+    try {
+      const { password } = request.body as { password: string };
+      if (verifyPassword(password)) {
+        return reply.header('Set-Cookie', getTokenCookie()).send({ ok: true });
+      }
+      return reply.status(401).send({ ok: false, error: '密码错误' });
+    } catch {
+      return reply.status(400).send({ ok: false, error: '请求格式错误' });
+    }
+  });
 
-      const apiKey = request.headers['x-api-key'];
-      if (apiKey !== config.apiKey) {
-        return reply.status(401).send({
-          success: false,
-          error: { code: 'UNAUTHORIZED', message: 'Invalid API key' },
-        });
+  app.post('/api/console-logout', async (_request, reply) => {
+    return reply.header('Set-Cookie', getClearCookie()).send({ ok: true });
+  });
+
+  app.get('/api/console-auth', async (request) => {
+    return { authEnabled: isAuthEnabled(), loggedIn: checkAuth(request) };
+  });
+
+  // Cookie-based auth hook
+  if (isAuthEnabled()) {
+    app.addHook('onRequest', async (request, reply) => {
+      // Skip auth for login/logout/auth-check, health check
+      if (request.url.startsWith('/api/console-')) return;
+      if (request.url === '/health') return;
+
+      if (!checkAuth(request)) {
+        // API requests get 401
+        if (request.url.startsWith('/api/')) {
+          return reply.status(401).send({
+            success: false,
+            error: { code: 'UNAUTHORIZED', message: '未登录' },
+          });
+        }
+        // HTML requests get login page
+        return reply.type('text/html').send(getLoginPageHtml());
       }
     });
+    app.log.info('Password protection: enabled');
   }
 
   // Initialize database

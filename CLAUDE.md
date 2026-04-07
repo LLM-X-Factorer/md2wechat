@@ -15,7 +15,7 @@ Markdown → 微信公众号草稿箱，自托管 HTTP 微服务。
 
 ```
 src/
-  core/       # parser, converter, fixer, wechat client, cover strategies
+  core/       # parser, converter, fixer, wechat client, cover strategies, auth
   services/   # pipeline orchestration, database, publish records, webhook, fileManager
   routes/     # HTTP endpoints (publish, history, health, themes, config, static)
   types/      # TypeScript interfaces (HeadingStyle, ThemeInfo, ThemeManifest)
@@ -47,6 +47,15 @@ npm start         # Production (requires build first)
 - Graceful degradation: AI cover fails → fallback to sharp
 - Non-blocking webhooks and database errors
 
+## Authentication
+
+- Cookie-based auth (HttpOnly + SameSite=Strict), enabled when `API_KEY` env is set
+- Auth module: src/core/auth.ts
+- Login/logout/auth-check: /api/console-login, /api/console-logout, /api/console-auth
+- Unauthenticated HTML requests → server-rendered login page
+- Unauthenticated API requests → 401
+- /health always accessible without auth
+
 ## API Endpoints
 
 - POST /api/publish — publish markdown article to WeChat draft
@@ -55,6 +64,9 @@ npm start         # Production (requires build first)
 - GET /api/history — paginated publish history
 - GET /api/config — masked config summary
 - GET /health — service health check
+- POST /api/console-login — password login (returns HttpOnly cookie)
+- POST /api/console-logout — clear session cookie
+- GET /api/console-auth — check auth status
 
 ## Deployment
 

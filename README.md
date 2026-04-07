@@ -32,7 +32,7 @@
 
 ## 核心功能
 
-- **Web 管理面板**：浏览器内发布文章、查看历史、管理配置，开箱即用
+- **Web 管理面板**：浏览器内发布文章、查看历史、管理配置，支持密码保护登录
 - **Markdown → 微信兼容 HTML**：代码高亮、数学公式、表格、引用块全支持
 - **图片自动处理**：本地图片和外链图片统一上传到微信图床，自动替换链接
 - **双模式封面生成**
@@ -84,8 +84,13 @@ open http://localhost:3000
 ### 通过 API 发布
 
 ```bash
-curl -X POST http://localhost:3000/api/publish \
-  -H "X-API-Key: your-api-key" \
+# 先登录获取 Cookie
+curl -c cookies.txt -X POST http://localhost:3000/api/console-login \
+  -H "Content-Type: application/json" \
+  -d '{"password":"your-password"}'
+
+# 使用 Cookie 发布
+curl -b cookies.txt -X POST http://localhost:3000/api/publish \
   -F "article=@article.md" \
   -F "author=你的名字" \
   -F "theme=blue"
@@ -94,8 +99,7 @@ curl -X POST http://localhost:3000/api/publish \
 附带图片的发布：
 
 ```bash
-curl -X POST http://localhost:3000/api/publish \
-  -H "X-API-Key: your-api-key" \
+curl -b cookies.txt -X POST http://localhost:3000/api/publish \
   -F "article=@output/article.md" \
   -F "images[]=@output/images/img1.png" \
   -F "images[]=@output/images/img2.png" \
@@ -124,7 +128,7 @@ curl -X POST http://localhost:3000/api/publish \
 | `WXGZH_DEFAULT_AUTHOR` | `tenisinfinite` | 默认作者名 |
 | `WXGZH_DEFAULT_THEME` | `default` | 默认主题 |
 | `WXGZH_DEFAULT_COVER_STRATEGY` | `sharp` | 默认封面策略（`sharp` / `ai`） |
-| `API_KEY` | 空（不鉴权） | 接口鉴权 Key |
+| `API_KEY` | 空（不鉴权） | 访问密码，设置后需登录才能访问 |
 | `WEBHOOK_URL` | — | 全局 Webhook 回调地址 |
 | `DATABASE_URL` | SQLite | PostgreSQL 连接串，不填用 SQLite |
 
@@ -342,15 +346,17 @@ curl -X POST http://localhost:3000/api/publish \
 在 n8n 中使用 **HTTP Request** 节点：
 
 ```
-Method: POST
-URL: http://your-server:3000/api/publish
-Headers:
-  X-API-Key: your-key
-Body (Form-Data):
-  article  → Binary file from previous node
-  author   → tenisinfinite
-  theme    → blue
-  webhookUrl → https://your-n8n/webhook/wechat-notify
+1. 先调用 POST http://your-server:3000/api/console-login 获取 Cookie
+   Body: {"password": "your-password"}
+
+2. 后续请求自动携带 Cookie：
+   Method: POST
+   URL: http://your-server:3000/api/publish
+   Body (Form-Data):
+     article  → Binary file from previous node
+     author   → tenisinfinite
+     theme    → blue
+     webhookUrl → https://your-n8n/webhook/wechat-notify
 ```
 
 ---

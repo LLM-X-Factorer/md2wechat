@@ -1286,17 +1286,15 @@ tr:hover td { background: var(--gray-50); }
         <p>查看当前配置信息（只读）</p>
       </div>
       <div class="page-body">
-        <div class="settings-section">
+        <div class="settings-section" id="authSection" style="display:none;">
           <h3>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            接口鉴权
+            登录状态
           </h3>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <input type="password" class="form-input" id="settingsApiKey" placeholder="未设置 API Key 时无需填写" style="max-width:320px;">
-            <button class="btn btn-outline" onclick="saveApiKey()" style="white-space:nowrap;">保存</button>
-            <button class="btn btn-outline" onclick="clearApiKey()" style="white-space:nowrap;">清除</button>
+            <span style="color:var(--text-secondary);">已登录，密码保护已启用</span>
+            <button class="btn btn-outline" onclick="logout()" style="white-space:nowrap;">退出登录</button>
           </div>
-          <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">仅在服务端配置了 API_KEY 时需要填写，保存在浏览器本地。</p>
         </div>
 
         <div class="settings-section">
@@ -1336,7 +1334,7 @@ tr:hover td { background: var(--gray-50); }
             <p><code>WXGZH_DEFAULT_COVER_STRATEGY</code> - 默认封面策略 (sharp / ai)</p>
             <p><code>IMAGEN_API_KEY</code> - Google Imagen 4 API Key</p>
             <p><code>WEBHOOK_URL</code> - 默认 Webhook 回调地址</p>
-            <p><code>API_KEY</code> - 接口鉴权 Key（设置后需在面板输入）</p>
+            <p><code>API_KEY</code> - 访问密码（设置后需登录才能访问）</p>
             <p style="margin-top:8px; color: var(--text-muted);">修改配置后需要重启服务才能生效。</p>
           </div>
         </div>
@@ -1446,44 +1444,14 @@ tr:hover td { background: var(--gray-50); }
     }, 3500);
   }
 
-  // ----- API Key -----
-  function getApiKey() {
-    return localStorage.getItem('md2wechat_api_key') || '';
-  }
-
-  function setApiKey(key) {
-    if (key) {
-      localStorage.setItem('md2wechat_api_key', key);
-    } else {
-      localStorage.removeItem('md2wechat_api_key');
-    }
-  }
-
-  function getAuthHeaders() {
-    const key = getApiKey();
-    return key ? { 'X-API-Key': key } : {};
-  }
-
   // ----- API -----
   async function apiFetch(url, opts) {
     try {
       opts = opts || {};
-      opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
       const res = await fetch(url, opts);
       if (res.status === 401) {
-        const savedKey = getApiKey();
-        const newKey = prompt('请输入 API Key（服务端已配置 API_KEY 鉴权）：', savedKey);
-        if (newKey !== null) {
-          setApiKey(newKey);
-          opts.headers = Object.assign({}, opts.headers, getAuthHeaders());
-          const retryRes = await fetch(url, opts);
-          if (!retryRes.ok) {
-            const body = await retryRes.json().catch(() => ({}));
-            throw new Error(body.error || body.message || '请求失败 (' + retryRes.status + ')');
-          }
-          return await retryRes.json();
-        }
-        throw new Error('需要 API Key 才能访问');
+        location.reload();
+        throw new Error('未登录');
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -1971,20 +1939,11 @@ tr:hover td { background: var(--gray-50); }
     fd.append('enableComment', $('#inputComment').checked ? '1' : '0');
 
     try {
-      const fetchOpts = { method: 'POST', body: fd, headers: getAuthHeaders() };
-      let res = await fetch('/api/publish', fetchOpts);
+      const res = await fetch('/api/publish', { method: 'POST', body: fd });
 
-      // Handle API key auth
       if (res.status === 401) {
-        const savedKey = getApiKey();
-        const newKey = prompt('请输入 API Key（服务端已配置 API_KEY 鉴权）：', savedKey);
-        if (newKey !== null) {
-          setApiKey(newKey);
-          fetchOpts.headers = getAuthHeaders();
-          res = await fetch('/api/publish', fetchOpts);
-        } else {
-          throw new Error('需要 API Key 才能发布');
-        }
+        location.reload();
+        throw new Error('未登录');
       }
 
       const data = await res.json().catch(() => ({}));
@@ -2204,22 +2163,19 @@ tr:hover td { background: var(--gray-50); }
   };
 
   // ----- Settings -----
-  window.saveApiKey = function() {
-    const val = $('#settingsApiKey').value.trim();
-    setApiKey(val);
-    toast(val ? 'API Key 已保存' : 'API Key 已清除', 'success');
-  };
-
-  window.clearApiKey = function() {
-    setApiKey('');
-    $('#settingsApiKey').value = '';
-    toast('API Key 已清除', 'success');
+  window.logout = async function() {
+    await fetch('/api/console-logout', { method: 'POST' });
+    location.reload();
   };
 
   async function loadSettings() {
-    // Load saved API key into settings input
-    const savedKey = getApiKey();
-    if (savedKey) $('#settingsApiKey').value = savedKey;
+    // Show auth section if auth is enabled
+    try {
+      const auth = await fetch('/api/console-auth').then(r => r.json());
+      if (auth.authEnabled && auth.loggedIn) {
+        $('#authSection').style.display = '';
+      }
+    } catch {}
     try {
       const [config, themes] = await Promise.all([
         state.config ? state.config : apiFetch('/api/config'),
