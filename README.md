@@ -39,12 +39,14 @@
   - `sharp` 模式：背景图 + 标题文字合成，支持自定义背景和额外图层
   - `ai` 模式：接入 Google Imagen 4 AI 生图，根据标题自动构建 Prompt
   - `template` 模式：主题自带底图 + frontmatter `coverFields` 驱动 SVG 叠字/遮罩合成，所见即所得
-- **主题自动化**：`theme.json` 声明即可开启开头动图注入、结尾固定段落注入、章节头图（Part.XX banner）自动合成
+- **浏览器内预览（v1.2）**：`/api/preview` 渲染同样的 HTML + 封面但不调用微信 API，迭代主题样式不消耗草稿箱名额
+- **主题自动化（v1.1 / v1.2）**：`theme.json` 声明即可开启开头动图注入、结尾固定段落注入、章节头图（Part.XX banner）自动合成；`student-share` 主题额外支持 Part.01 随机圆形头像、frontmatter `background` 自动生成两列表格、真题卡 blockquote 自动套 `.exam-card` 样式
 - **自定义主题包**：支持挂载完整主题包（CSS + assets/ + 兼容性覆盖），无需修改源码
 - **Markdown 插件扩展**：通过配置文件注册任意 `markdown-it` 插件
-- **发布历史持久化**：默认 SQLite，可切换为 PostgreSQL
+- **发布历史持久化**：默认 SQLite，可切换为 PostgreSQL；历史列表 UI 以彩色 pill 呈现主题 / 封面策略（v1.2）
 - **Webhook 回调**：发布成功后主动通知，支持全局配置和单次覆盖
 - **标准 REST API**：任何工具都能调用，天然适配 n8n、Make、自定义脚本
+- **写作者使用手册**：面向非技术使用者的 PDF 指南见 [`guide/md2wechat-user-guide.pdf`](guide/md2wechat-user-guide.pdf)
 
 ---
 
@@ -200,6 +202,27 @@ curl -b cookies.txt -X POST http://localhost:3000/api/publish \
   }
 }
 ```
+
+### POST /api/preview
+
+与 `/api/publish` 相同的 multipart 入参，但不调用微信 API。返回 JSON：
+
+```json
+{
+  "success": true,
+  "data": {
+    "html": "<!DOCTYPE html>…（本地图片已内联为 data: URI）",
+    "cover": "data:image/jpeg;base64,…",
+    "coverStrategy": "template",
+    "title": "…", "author": "…", "digest": "…",
+    "theme": "student-share",
+    "bannerCount": 5,
+    "imageCount": 9
+  }
+}
+```
+
+适合在开发 / 调整主题时做所见即所得预览，不消耗微信草稿箱名额。Web 管理面板的「预览」按钮即调用此端点。
 
 ### GET /api/history
 
