@@ -35,10 +35,12 @@
 - **Web 管理面板**：浏览器内发布文章、查看历史、管理配置，支持密码保护登录
 - **Markdown → 微信兼容 HTML**：代码高亮、数学公式、表格、引用块全支持
 - **图片自动处理**：本地图片和外链图片统一上传到微信图床，自动替换链接
-- **双模式封面生成**
+- **三模式封面生成**
   - `sharp` 模式：背景图 + 标题文字合成，支持自定义背景和额外图层
   - `ai` 模式：接入 Google Imagen 4 AI 生图，根据标题自动构建 Prompt
-- **自定义主题包**：支持挂载完整主题包（CSS + 兼容性覆盖），无需修改源码
+  - `template` 模式：主题自带底图 + frontmatter `coverFields` 驱动 SVG 叠字/遮罩合成，所见即所得
+- **主题自动化**：`theme.json` 声明即可开启开头动图注入、结尾固定段落注入、章节头图（Part.XX banner）自动合成
+- **自定义主题包**：支持挂载完整主题包（CSS + assets/ + 兼容性覆盖），无需修改源码
 - **Markdown 插件扩展**：通过配置文件注册任意 `markdown-it` 插件
 - **发布历史持久化**：默认 SQLite，可切换为 PostgreSQL
 - **Webhook 回调**：发布成功后主动通知，支持全局配置和单次覆盖
@@ -248,10 +250,15 @@ my-theme/
 ├── theme.css       # 主题样式（必需）
 ├── theme.json      # 主题元数据（必需）
 ├── template.md     # 可选：写作模板，供业务人员下载参考
-└── compat.css      # 可选：覆盖微信兼容性 CSS
+├── compat.css      # 可选：覆盖微信兼容性 CSS
+└── assets/         # 可选：主题自带静态资源（动图/二维码/尾图/封面底图）
+    ├── opening.gif
+    ├── footer.md
+    ├── cover-base.png
+    └── ...
 ```
 
-**theme.json**：
+**theme.json** — 最小配置：
 
 ```json
 {
@@ -260,22 +267,72 @@ my-theme/
   "version": "1.0.0",
   "description": "主题用途说明，会在前端选择时展示",
   "category": "分类标签",
-  "headingStyle": "default",
-  "compatOverrides": {
-    "highlight": true
+  "headingStyle": "default"
+}
+```
+
+**theme.json** — 启用全部自动化能力：
+
+```json
+{
+  "name": "student-share",
+  "displayName": "学员经验分享",
+  "version": "1.1.0",
+  "headingStyle": "part-number",
+
+  "autoInject": {
+    "header": "assets/opening.gif",
+    "footerMarkdown": "assets/footer.md"
+  },
+
+  "cover": {
+    "type": "template",
+    "base": "assets/cover-base.png",
+    "width": 1770,
+    "height": 795,
+    "masks": [
+      { "x": 365, "y": 130, "width": 540, "height": 130, "color": "#F9DA04", "rx": 18 }
+    ],
+    "overlays": [
+      { "field": "tagline", "x": 635, "y": 148, "size": 54, "color": "#000000",
+        "weight": 900, "anchor": "middle", "maxWidth": 540 }
+    ]
+  },
+
+  "headingBanner": {
+    "enabled": true,
+    "width": 1123,
+    "height": 437,
+    "english": { "size": 208, "top": 60, "align": "middle" },
+    "chinese": { "size": 60, "weight": 900, "top": 320, "align": "middle" }
   }
 }
 ```
 
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| `name` | ✅ | 主题唯一标识，与目录名一致 |
-| `displayName` | ✅ | 前端显示的中文名称 |
-| `version` | ✅ | 语义化版本号 |
-| `description` | — | 用途说明，前端选择主题时展示 |
-| `category` | — | 分类标签（如"学术内容"、"人物专访"） |
-| `headingStyle` | — | H2 自动转换格式：`default`（不转换）/ `part-number`（Part.01）/ `chinese-number`（第一部分） |
-| `compatOverrides` | — | 覆盖默认微信兼容性 CSS |
+| 字段 | 说明 |
+|------|------|
+| `name` / `displayName` / `version` | 必填：主题标识、中文名、语义化版本 |
+| `description` / `category` | 可选：前端选择时展示 |
+| `headingStyle` | H2 自动转换：`default` / `part-number`（Part.01）/ `chinese-number`（第一部分） |
+| `compatOverrides` | 覆盖默认微信兼容性 CSS |
+| `autoInject.header` | `assets/` 下的图片路径，渲染前自动作为开头卡片插入 |
+| `autoInject.footerMarkdown` | `assets/` 下的 markdown 文件，附在正文末尾（常用于固定结尾话术 + 引流 + 关注尾图） |
+| `cover.type: "template"` | 启用 template 封面策略；发布时根据 frontmatter `coverFields` 合成 |
+| `cover.masks[]` | 可选：在底图上盖一层纯色矩形（遮住底图原有占位字），字段 `x,y,width,height,color,rx` |
+| `cover.overlays[]` | 文字叠加；`field` 对应 frontmatter `coverFields` 的 key，支持 `anchor`、`maxWidth` 自动换行（半角/全角分别计宽） |
+| `headingBanner.enabled` | `part-number` 模式下为每个 H2 自动生成 banner 图 |
+
+**Markdown frontmatter** 配合 template 封面：
+
+```yaml
+---
+theme: student-share
+coverFields:
+  tagline: 双非 SE 保研北航
+---
+```
+
+`coverFields` 缺失或单项为空时，template 封面会自动降级为 `sharp` 策略。
 
 **docker-compose.yml** 中添加挂载：
 
@@ -387,23 +444,27 @@ docker-compose -f docker-compose.prod.yml up -d
 | `black` | 深色 |
 | `orange` | 橙色系 |
 
-### 定制主题（含排版模板）
+### 定制主题（含排版模板 + 自动化）
 
-定制主题在配色之上提供 **章节自动编号** 和 **写作模板**，适用于有固定内容规范的业务场景。
+定制主题在配色之上提供 **章节自动编号**、**写作模板** 和可选的 **资源/封面/章节头图自动注入**，适用于有固定内容规范的业务场景。
 
-| 主题名 | 显示名 | 章节格式 | 适用场景 |
-|--------|--------|----------|----------|
-| `paperweekly` | 论文解读 | Part.01 / Part.02 … | 学术论文解读类文章 |
-| `student-share` | 学员经验分享 | Part.01 / Part.02 … | 保研/读博/转行经历分享 |
-| `values` | 价值观人物 | 第一部分 / 第二部分 … | 教师/员工人物专访 |
+| 主题名 | 显示名 | 章节格式 | 自动化能力 | 适用场景 |
+|--------|--------|----------|-----------|----------|
+| `paperweekly` | 论文解读 | Part.01 / Part.02 … | — | 学术论文解读类文章 |
+| `student-share` | 学员经验分享 | Part.01 / Part.02 … | autoInject + template cover + heading banner | 保研/读博/转行经历分享 |
+| `values` | 价值观人物 | 第一部分 / 第二部分 … | autoInject | 教师/员工人物专访 |
 
 **使用方式**：
 
 1. 在 Web 面板选择定制主题，点击"下载写作模板"获取 `template.md`
-2. 按模板结构填写内容（用 `##` 标记各章节标题）
-3. 发布时系统自动将 `##` 转换为对应的章节编号格式
+2. 按模板结构填写内容（用 `##` 标记各章节标题；按主题说明在 frontmatter 里填写 `coverFields`）
+3. 发布时系统自动：
+   - 将 `##` 转换为对应的章节编号格式
+   - 在开头注入主题动图卡片，在结尾注入固定话术 / 引流 / 关注尾图
+   - 为 `part-number` 模式的每个 `##` 合成 1123×437 章节头图
+   - 按 `coverFields` 合成封面（template 主题）
 
-**章节编号说明**：定制主题的 `##`（H2 标题）会被自动转换为装饰性编号。`###`（H3 及以下）不受影响，可自由使用。
+**章节编号说明**：定制主题的 `##`（H2 标题）会被自动转换为装饰性编号或头图。`###`（H3 及以下）不受影响，可自由使用。
 
 ---
 

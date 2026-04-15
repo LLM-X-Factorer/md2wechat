@@ -15,16 +15,25 @@ Markdown → 微信公众号草稿箱，自托管 HTTP 微服务。
 
 ```
 src/
-  core/       # parser, converter, fixer, wechat client, cover strategies, auth
+  core/
+    parser.ts, converter.ts, fixer.ts         # markdown → HTML pipeline
+    themeAssets.ts                            # autoInject + theme static asset resolution
+    banner.ts                                 # async heading banner (Part.XX) renderer
+    cover/
+      strategy.ts, sharp-strategy.ts          # background + title SVG composite
+      ai-strategy.ts                          # Google Imagen 4
+      template-strategy.ts                    # theme base image + SVG masks/overlays from coverFields
+    wechat.ts, auth.ts, css/
   services/   # pipeline orchestration, database, publish records, webhook, fileManager
   routes/     # HTTP endpoints (publish, history, health, themes, config, static)
-  types/      # TypeScript interfaces (HeadingStyle, ThemeInfo, ThemeManifest)
+  types/      # TypeScript interfaces (HeadingStyle, ThemeInfo, ThemeManifest, ThemeCoverSpec…)
   index.ts    # Server entry point
-themes/       # Custom themes with CSS + template.md + theme.json
+themes/       # Custom themes (CSS + template.md + theme.json + assets/)
   paperweekly/    # 论文解读 (headingStyle: part-number)
-  student-share/  # 学员经验分享 (headingStyle: part-number)
-  values/         # 价值观人物 (headingStyle: chinese-number)
-assets/       # Background images for cover generation
+  student-share/  # 学员经验分享 (part-number + template cover + heading banner + autoInject)
+  values/         # 价值观人物 (chinese-number + autoInject)
+assets/
+  backgrounds/    # Built-in background images for sharp cover strategy
 public/       # Web UI (SPA)
 config/       # User markdown plugins
 ```
@@ -39,12 +48,20 @@ npm start         # Production (requires build first)
 
 ## Key Patterns
 
-- 7-step pipeline: parse → render → fix → cover → upload → persist → webhook
-- Strategy pattern for cover generation (sharp / ai)
-- Theme headingStyle: h2 auto-transform (part-number → Part.XX, chinese-number → 第X部分)
+- Pipeline order: parse → **autoInject** → render → **banner** → **theme assets** → fix → cover → upload → persist → webhook
+  - autoInject prepends `theme.autoInject.header` GIF and appends `theme.autoInject.footerMarkdown` before render
+  - banner walks heading placeholders marked `data-banner-pending` and async-renders 1123×437 JPEG via sharp+SVG; buffers collected for fixer upload
+  - theme assets rewrites `<img src="assets/...">` to synthetic filenames and loads buffers for fixer upload
+- Strategy pattern for cover: `sharp` (random bg) / `ai` (Imagen 4) / `template` (theme base image + SVG masks/overlays driven by `coverFields` frontmatter)
+- Theme manifest extensions (`theme.json`):
+  - `headingStyle` — `part-number` / `chinese-number` / `default`
+  - `autoInject.header` — relative path under `assets/` for opening card
+  - `autoInject.footerMarkdown` — relative path to `footer.md` appended as rendered markdown
+  - `cover.type: "template"` — requires `base` + `overlays[]` + optional `masks[]` (rects to cover baked-in text)
+  - `headingBanner.enabled` — when true, every H2 in `part-number` mode becomes a generated banner image
+- Graceful degradation: `template` cover failure or missing fields → `sharp`; AI failure → `sharp`
 - In-memory processing, no temp file I/O during pipeline
 - CSS inlining for WeChat compatibility
-- Graceful degradation: AI cover fails → fallback to sharp
 - Non-blocking webhooks and database errors
 
 ## Authentication
@@ -76,3 +93,10 @@ npm start         # Production (requires build first)
 - Required env: WXGZH_APPID, WXGZH_APPSECRET
 - Optional: IMAGEN_API_KEY, DATABASE_URL, API_KEY, WEBHOOK_URL
 - Repo: github.com/LLM-X-Factorer/md2wechat
+
+## Frontmatter Schema
+
+Basic fields: `title`, `author`, `digest`, `theme`, `cover`, `enableComment`.
+
+Theme-specific:
+- `coverFields: { <field>: <string> }` — consumed by `template` cover strategy; keys must match `cover.overlays[].field` in the manifest. Example for `student-share`: `coverFields: { tagline: "双非 SE 保研北航" }`.
