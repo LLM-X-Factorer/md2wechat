@@ -8,3 +8,4 @@ data/*.db-wal
 docs/
 test_article.md
 themes/refs/
+.playwright-mcp/

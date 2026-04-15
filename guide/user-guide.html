@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>md2wechat 写作者使用手册 · v1.2</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    font-size: 11pt;
+    line-height: 1.65;
+    color: #222;
+    margin: 0;
+  }
+  h1 { font-size: 24pt; color: #0a8f47; margin: 0 0 6px 0; page-break-after: avoid; }
+  h2 { font-size: 16pt; color: #0a8f47; margin: 28px 0 10px 0; padding-bottom: 4px; border-bottom: 2px solid #d1fae5; page-break-after: avoid; }
+  h3 { font-size: 13pt; margin: 16px 0 6px 0; color: #0369a1; page-break-after: avoid; }
+  p { margin: 6px 0 10px 0; }
+  ol, ul { margin: 6px 0 10px 20px; padding: 0; }
+  li { margin: 3px 0; }
+  code, pre { font-family: "SF Mono", Consolas, Menlo, monospace; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 10pt; color: #be123c; }
+  pre {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #10b981;
+    padding: 10px 14px; border-radius: 4px; font-size: 9.5pt; line-height: 1.5;
+    overflow: auto; white-space: pre-wrap; word-break: break-all;
+  }
+  pre code { background: transparent; padding: 0; color: #111; }
+  .cover {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff; padding: 36px 28px; margin: 0 0 28px 0; border-radius: 6px;
+    text-align: center;
+  }
+  .cover h1 { color: #fff; font-size: 24pt; margin: 0; }
+  .cover .subtitle { font-size: 12pt; opacity: 0.92; margin-top: 10px; }
+  .cover .meta { margin-top: 20px; font-size: 10pt; opacity: 0.85; }
+  .toc {
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;
+    padding: 16px 22px; margin: 18px 0 24px 0;
+  }
+  .toc h3 { margin: 0 0 8px 0; color: #374151; border: none; }
+  .toc ol { margin-left: 22px; }
+  .note {
+    background: #fef9c3; border-left: 4px solid #eab308;
+    padding: 10px 14px; margin: 12px 0; border-radius: 3px; font-size: 10pt;
+  }
+  .tip {
+    background: #ecfdf5; border-left: 4px solid #10b981;
+    padding: 10px 14px; margin: 12px 0; border-radius: 3px; font-size: 10pt;
+  }
+  .warn {
+    background: #fef2f2; border-left: 4px solid #ef4444;
+    padding: 10px 14px; margin: 12px 0; border-radius: 3px; font-size: 10pt;
+  }
+  figure { margin: 14px 0; text-align: center; page-break-inside: avoid; }
+  figure img {
+    max-width: 100%; border: 1px solid #e5e7eb; border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  figcaption { font-size: 9.5pt; color: #6b7280; margin-top: 6px; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 10px 0;
+    font-size: 10pt; page-break-inside: avoid;
+  }
+  th, td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; font-weight: 600; }
+  td code { font-size: 9pt; }
+  .theme-card {
+    border: 1px solid #e5e7eb; border-radius: 6px;
+    padding: 14px 18px; margin: 10px 0; page-break-inside: avoid;
+  }
+  .theme-card h4 { margin: 0 0 4px 0; font-size: 12pt; color: #0369a1; }
+  .theme-card .badge {
+    display: inline-block; padding: 1px 8px; border-radius: 10px;
+    font-size: 9pt; font-weight: 500; margin-right: 6px;
+  }
+  .badge-student { background: #e0f2fe; color: #0369a1; }
+  .badge-paper { background: #dcfce7; color: #15803d; }
+  .badge-values { background: #f3e8ff; color: #7c3aed; }
+  hr { border: none; border-top: 1px dashed #d1d5db; margin: 20px 0; }
+  .page-break { page-break-before: always; }
+  .kbd {
+    display: inline-block; padding: 1px 6px;
+    background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 3px;
+    font-size: 9pt; font-family: monospace;
+  }
+  .footer-note { font-size: 9pt; color: #9ca3af; text-align: center; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>md2wechat 写作者使用手册</h1>
+  <div class="subtitle">Markdown 一键发布到微信公众号草稿箱</div>
+  <div class="meta">v1.2 · 点头人工智能公众号 · 2026-04</div>
+</div>
+
+<div class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#intro">这是什么</a></li>
+    <li><a href="#login">第一步：登录系统</a></li>
+    <li><a href="#pick-theme">第二步：选主题、下模板</a></li>
+    <li><a href="#write">第三步：填 frontmatter、写正文</a></li>
+    <li><a href="#preview">第四步：预览（不消耗微信草稿）</a></li>
+    <li><a href="#publish">第五步：发布到草稿箱</a></li>
+    <li><a href="#history">查看发布历史</a></li>
+    <li><a href="#themes">三个主题速查表</a></li>
+    <li><a href="#faq">常见问题</a></li>
+  </ol>
+</div>
+
+<h2 id="intro">1. 这是什么</h2>
+<p>md2wechat 是一个把 <b>Markdown 文件</b>一键发布到<b>微信公众号草稿箱</b>的网页工具。它最核心的事情是替你做好三件事：</p>
+<ul>
+  <li>把 Markdown 渲染成微信排版（包括封面、章节图、配色）</li>
+  <li>按文章分类（论文解读 / 学员经验分享 / 价值观人物）自动套用<b>固定视觉模板</b></li>
+  <li>把生成结果<b>作为草稿</b>直接送到公众号后台，你打开微信后台点一下"发送"即可</li>
+</ul>
+<div class="tip"><b>你不需要会写代码。</b> 你只需要会写 Markdown 文章 + 填几个字段（学校、排名等）。所有格式都由系统自动生成。</div>
+
+<h2 id="login">2. 第一步：登录系统</h2>
+<p>打开浏览器访问 <code>http://43.139.146.170:3000</code>，输入访问密码（向管理员索取）。</p>
+<figure>
+  <img src="assets/01-login.png" alt="登录页">
+  <figcaption>图 2-1 登录页面</figcaption>
+</figure>
+<p>登录后进入仪表盘，可以看到服务状态、微信配置、数据库连接的健康度。</p>
+<figure>
+  <img src="assets/02-dashboard.png" alt="仪表盘">
+  <figcaption>图 2-2 仪表盘（全绿色表示系统正常）</figcaption>
+</figure>
+
+<h2 id="pick-theme">3. 第二步：选主题、下模板</h2>
+<p>点左侧导航「<b>发布文章</b>」，在"主题"下拉框里选择你要写的文章分类。</p>
+<figure>
+  <img src="assets/03-publish-page.png" alt="发布页初始状态">
+  <figcaption>图 3-1 发布页初始状态，等待上传文件</figcaption>
+</figure>
+<p>选完主题后，会出现一张介绍卡片和「<b>下载写作模板</b>」按钮。<b>请务必先下载模板</b>——里面预置了 frontmatter 字段和章节骨架，照着填就行。</p>
+<figure>
+  <img src="assets/04-theme-selected.png" alt="主题选中卡片">
+  <figcaption>图 3-2 选择「学员经验分享（student-share）」后的介绍卡片</figcaption>
+</figure>
+
+<div class="warn">⚠ 三个主题的 frontmatter 字段不同，不要混用。每写一篇新文章，先选主题，再下对应的模板。</div>
+
+<h2 id="write">4. 第三步：填 frontmatter、写正文</h2>
+<p>模板文件是一个 <code>.md</code> 纯文本文件，用任何文本编辑器打开即可（推荐 VS Code、Typora、iA Writer）。文件顶部两条 <code>---</code> 之间的部分叫 <b>frontmatter</b>，是你要填的"结构化字段"：</p>
+<pre><code>---
+theme: student-share
+author: 点头教育
+coverFields:
+  tagline: 双非 SE 保研北航
+background:
+  school: 某 211 · 软件工程
+  rank: 8 / 120
+  english: 六级 560
+  research: 无
+  awards: 国家级 1 / 省级 2
+  summerCamps: 北航（优营）、清华（放弃）
+  prePromotion: 北航、复旦
+  offers: 北航、复旦
+  final: 北航国新院
+  mentor: 张老师
+---
+
+# 文章标题
+
+## 背景介绍
+
+（这里不用手写学校/专业/排名——background 字段会自动渲染成表格）
+
+## 心路历程
+
+按时间线讲述 ...
+</code></pre>
+
+<div class="tip"><b>填写要点：</b>
+<ul>
+  <li>冒号 <code>:</code> 后面要留一个空格</li>
+  <li>缩进用 2 个空格（不要用 Tab）</li>
+  <li>值里有特殊字符（冒号、引号）时，用英文双引号把整个值包起来</li>
+  <li>不想填的字段整行删掉即可，不要留空值</li>
+</ul></div>
+
+<h3>写完之后上传</h3>
+<p>在发布页把整个 <code>.md</code> 文件拖到虚线框里（或点「选择文件」）。系统会识别并在下方展示内容预览。</p>
+<figure>
+  <img src="assets/05-file-uploaded.png" alt="文件上传成功">
+  <figcaption>图 4-1 文件上传后可以直接看到文章内容</figcaption>
+</figure>
+
+<h2 id="preview">5. 第四步：预览（不消耗微信草稿）</h2>
+<p>页面底部有两个按钮：<span class="kbd">发布到草稿箱</span> 和 <span class="kbd">预览</span>。<b>建议每次先点"预览"</b>——它只在浏览器里渲染，不会占用公众号的草稿箱名额。</p>
+<figure>
+  <img src="assets/06-preview-button.png" alt="预览按钮">
+  <figcaption>图 5-1 底部按钮区：先预览、确认好再发布</figcaption>
+</figure>
+
+<p>预览会在下方弹出一个面板，左边是封面，右边是 <b>375px 宽的微信阅读宽度模拟正文</b>：</p>
+<figure>
+  <img src="assets/07-preview-result.png" alt="预览结果上半">
+  <figcaption>图 5-2 封面 + Part.01 章节头图 + 自动生成的圆形头像</figcaption>
+</figure>
+<p>向下滚动能看到 <b>background 字段自动生成的表格</b>：</p>
+<figure>
+  <img src="assets/08-preview-table.png" alt="背景表格">
+  <figcaption>图 5-3 frontmatter 填的 10 个字段变成了两列表格</figcaption>
+</figure>
+
+<div class="tip">预览确认哪些内容：<b>封面文字是否正确</b>、<b>章节顺序对不对</b>、<b>表格字段都填到位了吗</b>、<b>图片有没有缺失</b>。有问题就回到 Markdown 文件修改，重新预览。</div>
+
+<h2 id="publish">6. 第五步：发布到草稿箱</h2>
+<p>预览确认无误后，点 <span class="kbd">发布到草稿箱</span>。等待约 5-15 秒（生成封面、上传图片、调微信 API）后，页面会提示"发布成功"并展示草稿的基本信息。</p>
+<p>然后打开<b>微信公众号后台</b> → 草稿箱，就能看到刚才发布的这篇。检查无误后点微信后台的"发送"正式推送。</p>
+
+<div class="warn">⚠ 本工具只生成<b>草稿</b>，不会自动群发。最终推送仍由你在微信后台点击"发送"完成。</div>
+
+<h2 id="history">7. 查看发布历史</h2>
+<p>左侧「<b>发布历史</b>」页可以看到所有发过的文章：</p>
+<figure>
+  <img src="assets/09-history.png" alt="发布历史列表">
+  <figcaption>图 7-1 历史列表含主题 / 封面 / 封面策略 / 状态 / 发布时间</figcaption>
+</figure>
+<ul>
+  <li><b>主题</b>彩色 pill：蓝 = student-share，绿 = paperweekly，紫 = values</li>
+  <li><b>封面策略</b>：<code>template</code> = 用了主题模板封面，<code>sharp</code> = 系统生成的默认封面，<code>custom</code> = 你手动上传的封面</li>
+  <li>点封面缩略图可以放大查看</li>
+</ul>
+
+<h2 id="themes" class="page-break">8. 三个主题速查表</h2>
+
+<div class="theme-card">
+  <h4><span class="badge badge-paper">paperweekly</span>论文解读</h4>
+  <p>适用于前沿论文解读文章，自动生成 Part.01/Part.02 章节编号。</p>
+  <p><b>frontmatter 示例：</b></p>
+<pre><code>---
+theme: paperweekly
+title: 论文标题
+author: 点头研究院
+---</code></pre>
+  <p>字段最少，只需 title + author。</p>
+</div>
+
+<div class="theme-card">
+  <h4><span class="badge badge-student">student-share</span>学员经验分享（功能最丰富）</h4>
+  <p>适用于保研、读博、转行等个人经历类文章。自动合成模板封面 + 章节头图 + Part.01 圆形头像 + 背景信息表格 + 真题卡片。</p>
+  <p><b>frontmatter 示例：</b></p>
+<pre><code>---
+theme: student-share
+author: 点头教育
+coverFields:
+  tagline: 双非 SE 保研北航     # 封面顶部黄色气泡文字，8-12 字
+background:                     # 自动生成 Part.01 背景表格（可选）
+  school: 某 211 · 软件工程
+  rank: 8 / 120
+  english: 六级 560
+  research: 无
+  awards: 国家级 1 / 省级 2
+  summerCamps: 北航（优营）、清华（放弃）
+  prePromotion: 北航、复旦
+  offers: 北航、复旦
+  final: 北航国新院
+  mentor: 张老师
+---</code></pre>
+  <p><b>真题卡片自动识别：</b>正文里写 <code>&gt; **XXX 大学**</code> 开头的块引用，会自动套上浅灰底卡片样式。例如：</p>
+<pre><code>&gt; **北京航空航天大学**
+&gt;
+&gt; 1. **考核时长：** 30 分钟
+&gt; 2. **考核方式：** 线上
+&gt; 3. **考核过程：** PPT 自我介绍 + 专业问题
+&gt; 4. **真题回忆：** ……</code></pre>
+</div>
+
+<div class="theme-card">
+  <h4><span class="badge badge-values">values</span>价值观人物</h4>
+  <p>适用于人物专访 / 价值观叙事类文章。自动注入开头动图卡片 + 结尾固定钩子段落，章节用"第一部分 / 第二部分"中文编号。</p>
+  <p><b>frontmatter 示例：</b></p>
+<pre><code>---
+theme: values
+title: 人物专访
+author: 点头研究院
+---</code></pre>
+</div>
+
+<h2 id="faq">9. 常见问题</h2>
+
+<h3>Q1. 封面字段 <code>tagline</code> 字数限制？</h3>
+<p>建议 8-12 字。超过 12 字会被自动换行或挤压，影响美观。格式建议：<code>[学校类型] [专业] 保研[去向]</code>。</p>
+
+<h3>Q2. 正文里的图片怎么放？</h3>
+<p>两种方式：</p>
+<ol>
+  <li><b>直接贴远程链接</b>：<code>![](https://xxxxx/img.jpg)</code>，系统会自动下载并上传到微信素材库</li>
+  <li><b>本地图片</b>：选择文件夹时把 <code>.md</code> 和图片放一起，系统自动识别</li>
+</ol>
+
+<h3>Q3. 预览里看着都好，发到草稿箱后为什么某张图没了？</h3>
+<p>检查两点：① 图片链接是否有防盗链；② 图片大小是否超过 10MB。如果图片上传失败，发布流程会继续完成，但失败的图片会被移除。在"发布历史"里可以看到错误信息。</p>
+
+<h3>Q4. 改错了想撤回怎么办？</h3>
+<p>本工具发送的是<b>草稿</b>，微信后台的草稿箱里随时可以删除或重建。只要你没点微信后台的"发送"按钮，都不会推给粉丝。</p>
+
+<h3>Q5. 能自己改主题样式吗？</h3>
+<p>可以，但需要开发同学介入。主题文件在服务器的 <code>themes/</code> 目录。写作者只需要按 frontmatter 模板填内容即可。</p>
+
+<h3>Q6. 同一篇文章发了两次草稿会怎样？</h3>
+<p>会在公众号后台生成两条独立的草稿（不会合并）。发布历史里也会有两条记录。多余的草稿可以在微信后台删除。</p>
+
+<div class="footer-note">
+  md2wechat v1.2 · 有问题找技术同学 · 仓库 github.com/LLM-X-Factorer/md2wechat
+</div>
+
+</body>
+</html>

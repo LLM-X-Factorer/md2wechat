@@ -19,13 +19,14 @@ src/
     parser.ts, converter.ts, fixer.ts         # markdown → HTML pipeline
     themeAssets.ts                            # autoInject + theme static asset resolution
     banner.ts                                 # async heading banner (Part.XX) renderer
+    avatar.ts                                 # Part.01 circular avatar generator (SVG→PNG, 10 palettes)
     cover/
       strategy.ts, sharp-strategy.ts          # background + title SVG composite
       ai-strategy.ts                          # Google Imagen 4
       template-strategy.ts                    # theme base image + SVG masks/overlays from coverFields
     wechat.ts, auth.ts, css/
   services/   # pipeline orchestration, database, publish records, webhook, fileManager
-  routes/     # HTTP endpoints (publish, history, health, themes, config, static)
+  routes/     # HTTP endpoints (publish, preview, history, health, themes, config, static)
   types/      # TypeScript interfaces (HeadingStyle, ThemeInfo, ThemeManifest, ThemeCoverSpec…)
   index.ts    # Server entry point
 themes/       # Custom themes (CSS + template.md + theme.json + assets/)
@@ -48,9 +49,12 @@ npm start         # Production (requires build first)
 
 ## Key Patterns
 
-- Pipeline order: parse → **autoInject** → render → **banner** → **theme assets** → fix → cover → upload → persist → webhook
+- `PublishPipeline` split into `prepare()` (parse → autoInject → render → banner → avatar → themeAssets → cover gen) and `execute()` (fix/upload → createDraft → persist → webhook). `/api/preview` reuses `prepare()` to return HTML+cover without touching WeChat API.
+- Pipeline order inside `prepare()`: parse → **autoInject** → render → **banner** → **avatar** → **theme assets** → cover gen
   - autoInject prepends `theme.autoInject.header` GIF and appends `theme.autoInject.footerMarkdown` before render
+  - `converter.applyThemeClassifiers` (student-share only) adds `class=exam-card` to blockquotes whose first `<strong>` matches 大学/学院/学校 — must run BEFORE CSS inlining so `.exam-card` rules get inlined
   - banner walks heading placeholders marked `data-banner-pending` and async-renders 1123×437 JPEG via sharp+SVG; buffers collected for fixer upload
+  - avatar (student-share only) replaces `data-avatar-pending` placeholder after Part.01 heading with 256×256 PNG (seed = theme|title|author, picks one of 10 radial-gradient palettes)
   - theme assets rewrites `<img src="assets/...">` to synthetic filenames and loads buffers for fixer upload
 - Strategy pattern for cover: `sharp` (random bg) / `ai` (Imagen 4) / `template` (theme base image + SVG masks/overlays driven by `coverFields` frontmatter)
 - Theme manifest extensions (`theme.json`):
@@ -76,6 +80,7 @@ npm start         # Production (requires build first)
 ## API Endpoints
 
 - POST /api/publish — publish markdown article to WeChat draft
+- POST /api/preview — same multipart input as publish; returns rendered HTML (local images inlined as data URIs) + cover data URI + theme/coverStrategy/bannerCount/imageCount, without calling WeChat API
 - GET /api/themes — list all themes with metadata (displayName, description, category)
 - GET /api/themes/:name/template — download theme writing template
 - GET /api/history — paginated publish history
@@ -100,3 +105,4 @@ Basic fields: `title`, `author`, `digest`, `theme`, `cover`, `enableComment`.
 
 Theme-specific:
 - `coverFields: { <field>: <string> }` — consumed by `template` cover strategy; keys must match `cover.overlays[].field` in the manifest. Example for `student-share`: `coverFields: { tagline: "双非 SE 保研北航" }`.
+- `background: { school, rank, english, research, awards, summerCamps, prePromotion, offers, final, mentor }` — `student-share` only; auto-rendered as a two-column table injected after the Part.01 heading/avatar. Empty fields skipped, missing `background` skips the table.
