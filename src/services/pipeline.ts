@@ -9,6 +9,7 @@ import { TemplateCoverStrategy } from '../core/cover/template-strategy.js';
 import { WechatClient } from '../core/wechat.js';
 import { applyAutoInject, loadThemeManifest, resolveThemeAssetsInHtml } from '../core/themeAssets.js';
 import { processHeadingBanners } from '../core/banner.js';
+import { processAvatarPlaceholders } from '../core/avatar.js';
 import { insertPublishRecord } from './publishRecord.js';
 import { triggerWebhook } from './webhook.js';
 import type { AppConfig, PublishOptions, PublishResult, CoverStrategy, PipelineError } from '../types/index.js';
@@ -112,7 +113,8 @@ export class PublishPipeline {
       const sizeBeforeBanner = themeAssetImages.size;
       const withBanners = await processHeadingBanners(rendered, manifest, this.config.themesDir, themeAssetImages);
       bannerCount = themeAssetImages.size - sizeBeforeBanner;
-      const resolved = resolveThemeAssetsInHtml(withBanners, this.config.themesDir, manifest, themeAssetImages);
+      const withAvatar = await processAvatarPlaceholders(withBanners, manifest, themeAssetImages);
+      const resolved = resolveThemeAssetsInHtml(withAvatar, this.config.themesDir, manifest, themeAssetImages);
       html = resolved.html;
     } catch (err) {
       throw createPipelineError(

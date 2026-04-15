@@ -596,7 +596,12 @@ function applyThemeClassifiers($: cheerio.CheerioAPI, manifest: ThemeManifest | 
   });
 }
 
-function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle, bannerEnabled: boolean): void {
+function transformHeadings(
+  $: cheerio.CheerioAPI,
+  headingStyle: HeadingStyle,
+  bannerEnabled: boolean,
+  part1AvatarSeed?: string
+): void {
   if (headingStyle === 'default') return;
 
   let h2Index = 0;
@@ -607,6 +612,9 @@ function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle, ba
 
     if (headingStyle === 'part-number') {
       const num = String(h2Index).padStart(2, '0');
+      const avatarPlaceholder = h2Index === 1 && part1AvatarSeed !== undefined
+        ? `<section class="student-share-avatar-pending" data-avatar-pending="1" data-avatar-seed="${part1AvatarSeed.replace(/"/g, '&quot;')}"></section>`
+        : '';
       if (bannerEnabled) {
         $h2.replaceWith(
           `<section class="theme-heading theme-heading-banner" data-wxgzh="heading" data-banner-pending="1" data-banner-number="${num}" data-banner-title="${text.replace(/"/g, '&quot;')}">` +
@@ -615,7 +623,8 @@ function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle, ba
           `<span class="theme-heading-num">${num}</span>` +
           `</section>` +
           `<h2 class="theme-heading-title">${text}</h2>` +
-          `</section>`
+          `</section>` +
+          avatarPlaceholder
         );
       } else {
         $h2.replaceWith(
@@ -625,7 +634,8 @@ function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle, ba
           `<span class="theme-heading-num">${num}</span>` +
           `</section>` +
           `<h2 class="theme-heading-title">${text}</h2>` +
-          `</section>`
+          `</section>` +
+          avatarPlaceholder
         );
       }
     } else if (headingStyle === 'chinese-number') {
@@ -681,7 +691,10 @@ export function renderMarkdownToHtml(
   const manifest = loadThemeManifest(options.themesDir, metadata.theme);
   const headingStyle = manifest?.headingStyle ?? 'default';
   const bannerEnabled = !!manifest?.headingBanner?.enabled && headingStyle === 'part-number';
-  transformHeadings($, headingStyle, bannerEnabled);
+  const part1AvatarSeed = manifest?.name === 'student-share' && headingStyle === 'part-number'
+    ? `${metadata.theme ?? ''}|${metadata.title ?? ''}|${metadata.author ?? ''}`
+    : undefined;
+  transformHeadings($, headingStyle, bannerEnabled, part1AvatarSeed);
   applyThemeClassifiers($, manifest);
 
   const themeCss = loadThemeCss(metadata.theme, options.themesDir);
