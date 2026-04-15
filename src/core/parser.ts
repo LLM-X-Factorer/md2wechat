@@ -79,6 +79,16 @@ function normalizeMetadata(data: Record<string, unknown>): Partial<ArticleMetada
     if (Object.keys(entries).length > 0) metadata.coverFields = entries;
   }
 
+  if (data.background && typeof data.background === 'object' && !Array.isArray(data.background)) {
+    const entries: Record<string, string> = {};
+    for (const [key, value] of Object.entries(data.background as Record<string, unknown>)) {
+      if (value === null || value === undefined) continue;
+      const str = String(value).trim();
+      if (str) entries[key] = str;
+    }
+    if (Object.keys(entries).length > 0) metadata.background = entries;
+  }
+
   return metadata;
 }
 

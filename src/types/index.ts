@@ -12,6 +12,7 @@ export interface ArticleMetadata {
   cover?: string;
   enableComment?: boolean;
   coverFields?: Record<string, string>;
+  background?: Record<string, string>;
 }
 
 export interface PublishOptions {
