@@ -578,6 +578,24 @@ function loadThemeManifest(themesDir: string, theme: string | undefined): ThemeM
 const CHINESE_NUMBERS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
   '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
 
+const EXAM_CARD_STRONG_REGEX = /(大学|学院|学校)/;
+
+function applyThemeClassifiers($: cheerio.CheerioAPI, manifest: ThemeManifest | undefined): void {
+  if (manifest?.name !== 'student-share') return;
+
+  $('blockquote').each((_, element) => {
+    const $bq = $(element);
+    const $firstStrong = $bq.find('strong').first();
+    if ($firstStrong.length === 0) return;
+    if (!EXAM_CARD_STRONG_REGEX.test($firstStrong.text())) return;
+
+    const existing = ($bq.attr('class') ?? '').split(/\s+/).filter(Boolean);
+    if (existing.includes('exam-card')) return;
+    existing.push('exam-card');
+    $bq.attr('class', existing.join(' '));
+  });
+}
+
 function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle, bannerEnabled: boolean): void {
   if (headingStyle === 'default') return;
 
@@ -664,6 +682,7 @@ export function renderMarkdownToHtml(
   const headingStyle = manifest?.headingStyle ?? 'default';
   const bannerEnabled = !!manifest?.headingBanner?.enabled && headingStyle === 'part-number';
   transformHeadings($, headingStyle, bannerEnabled);
+  applyThemeClassifiers($, manifest);
 
   const themeCss = loadThemeCss(metadata.theme, options.themesDir);
   const customCss = loadCustomCss(options.themesDir);
