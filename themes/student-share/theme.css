@@ -85,9 +85,9 @@ h4 {
 /* 正文 */
 p {
   margin: 1em 3%;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.8;
-  color: #333333;
+  color: #000000;
   text-align: justify;
 }
 
@@ -154,9 +154,51 @@ ol li {
 
 li {
   margin: 0.4em 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.8;
-  color: #333333;
+  color: #000000;
+}
+
+/* 真题卡片：使用 `exam-card` 类的 blockquote 覆盖默认引言块深色样式 */
+blockquote.exam-card,
+.exam-card {
+  background: #efefef !important;
+  color: #000000 !important;
+  border: none !important;
+  border-radius: 4px;
+  padding: 1em 1.2em;
+  margin: 1.2em 3%;
+}
+
+blockquote.exam-card p,
+.exam-card p {
+  color: #000000 !important;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0.3em 0;
+}
+
+blockquote.exam-card strong,
+.exam-card strong {
+  display: block;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 0.6em;
+}
+
+/* 章节头图占位容器 */
+section.theme-heading-banner-wrap {
+  margin: 2em 0 1.2em;
+  text-align: center;
+}
+
+section.theme-heading-banner-wrap img {
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  border-radius: 4px;
 }
 
 /* 代码块 */

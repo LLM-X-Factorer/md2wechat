@@ -5,7 +5,10 @@ import { fixHtmlContent } from '../core/fixer.js';
 import { resolveCoverStrategy } from '../core/cover/strategy.js';
 import { SharpCoverStrategy } from '../core/cover/sharp-strategy.js';
 import { AiCoverStrategy } from '../core/cover/ai-strategy.js';
+import { TemplateCoverStrategy } from '../core/cover/template-strategy.js';
 import { WechatClient } from '../core/wechat.js';
+import { applyAutoInject, loadThemeManifest, resolveThemeAssetsInHtml } from '../core/themeAssets.js';
+import { processHeadingBanners } from '../core/banner.js';
 import { insertPublishRecord } from './publishRecord.js';
 import { triggerWebhook } from './webhook.js';
 import type { AppConfig, PublishOptions, PublishResult, CoverStrategy, PipelineError } from '../types/index.js';
@@ -22,6 +25,7 @@ export class PublishPipeline {
   private wechat: WechatClient;
   private sharpStrategy: SharpCoverStrategy;
   private aiStrategy?: AiCoverStrategy;
+  private templateStrategy: TemplateCoverStrategy;
   private logger: { info: (...args: unknown[]) => void; warn: (...args: unknown[]) => void; error: (...args: unknown[]) => void };
 
   constructor(
@@ -37,6 +41,7 @@ export class PublishPipeline {
     });
 
     this.sharpStrategy = new SharpCoverStrategy();
+    this.templateStrategy = new TemplateCoverStrategy(config.themesDir);
 
     if (config.imagenApiKey) {
       this.aiStrategy = new AiCoverStrategy(config.imagenApiKey, config.imagenModel);
@@ -79,12 +84,23 @@ export class PublishPipeline {
     this.logger.info(`Publishing: "${title}" by ${author}, theme=${theme}, cover=${coverStrategy}`);
 
     // Step 2: Render Markdown to HTML
+    const manifest = loadThemeManifest(this.config.themesDir, theme);
+    const bodyWithInjections = applyAutoInject(parsed.body, this.config.themesDir, manifest);
+
     let html;
+    const themeAssetImages = new Map<string, Buffer>();
     try {
-      html = renderMarkdownToHtml(parsed.body, { ...parsed.metadata, title, author, theme }, {
-        configDir: this.config.configDir,
-        themesDir: this.config.themesDir,
-      });
+      const rendered = renderMarkdownToHtml(
+        bodyWithInjections,
+        { ...parsed.metadata, title, author, theme },
+        {
+          configDir: this.config.configDir,
+          themesDir: this.config.themesDir,
+        }
+      );
+      const withBanners = await processHeadingBanners(rendered, manifest, this.config.themesDir, themeAssetImages);
+      const resolved = resolveThemeAssetsInHtml(withBanners, this.config.themesDir, manifest, themeAssetImages);
+      html = resolved.html;
     } catch (err) {
       throw createPipelineError(
         `HTML 渲染失败: ${err instanceof Error ? err.message : String(err)}`,
@@ -96,7 +112,7 @@ export class PublishPipeline {
     // Step 3: Fix HTML (upload images)
     let fixedHtml;
     try {
-      const localImages = new Map<string, Buffer>();
+      const localImages = new Map<string, Buffer>(themeAssetImages);
       if (options.images) {
         for (const img of options.images) {
           localImages.set(img.filename, img.buffer);
@@ -127,6 +143,25 @@ export class PublishPipeline {
         // User-provided cover has highest priority
         coverBuffer = options.cover.buffer;
         actualCoverStrategy = 'custom' as 'sharp';
+      } else if (manifest?.cover?.type === 'template' && coverStrategy !== 'ai') {
+        try {
+          coverBuffer = await this.templateStrategy.generate({
+            title,
+            author,
+            width: manifest.cover.width ?? 1000,
+            height: manifest.cover.height ?? 700,
+            themeName: manifest.name,
+            coverSpec: manifest.cover,
+            fields: parsed.metadata.coverFields ?? {},
+          });
+          actualCoverStrategy = 'template' as 'sharp';
+        } catch (err) {
+          this.logger.warn(
+            `Template cover failed, falling back to sharp: ${err instanceof Error ? err.message : String(err)}`
+          );
+          coverBuffer = await this.sharpStrategy.generate({ title, author, width: 1000, height: 700 });
+          actualCoverStrategy = 'sharp';
+        }
       } else {
         const strategies: { sharp: CoverStrategy; ai?: CoverStrategy } = {
           sharp: this.sharpStrategy,

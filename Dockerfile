@@ -30,8 +30,8 @@ RUN apk add --no-cache python3 make g++ && \
 FROM node:20-alpine
 
 RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories
-# vips runtime for sharp + Chinese font for cover text rendering
-RUN apk add --no-cache vips font-noto-cjk fontconfig && \
+# vips runtime for sharp + Chinese + serif italic fonts for cover/banner text rendering
+RUN apk add --no-cache vips font-noto-cjk font-noto font-noto-extra fontconfig && \
     rm -f /usr/share/fonts/noto/NotoSerifCJK-*.ttc && \
     fc-cache -f && \
     rm -rf /var/cache/apk/*

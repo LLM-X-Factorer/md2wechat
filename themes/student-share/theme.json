@@ -1,8 +1,28 @@
 {
   "name": "student-share",
   "displayName": "学员经验分享",
-  "version": "1.0.0",
-  "description": "适用于学员个人经历分享类文章（保研、读博、转行等）。自动生成 Part.XX 章节编号，蓝色标题配色，深色引言块突出故事背景。",
+  "version": "1.1.0",
+  "description": "适用于学员个人经历分享类文章（保研、读博、转行等）。自动生成 Part.XX 章节编号 + 章节头图 banner，自动注入开头动图 / 分割线 / 引流二维码 / 关注尾图，封面基于学员 frontmatter 字段合成。",
   "category": "学员故事",
-  "headingStyle": "part-number"
+  "headingStyle": "part-number",
+  "autoInject": {
+    "header": "assets/opening.gif",
+    "footerMarkdown": "assets/footer.md"
+  },
+  "cover": {
+    "type": "template",
+    "base": "assets/cover-base.png",
+    "overlays": [
+      { "field": "school",     "x": 360, "y": 330, "size": 46, "color": "#1a1a1a", "weight": 700, "anchor": "middle", "maxWidth": 520 },
+      { "field": "major",      "x": 360, "y": 400, "size": 36, "color": "#333333", "anchor": "middle", "maxWidth": 520 },
+      { "field": "finalOffer", "x": 360, "y": 470, "size": 40, "color": "#c0392b", "weight": 700, "anchor": "middle", "maxWidth": 520 }
+    ]
+  },
+  "headingBanner": {
+    "enabled": true,
+    "width": 1123,
+    "height": 437,
+    "english": { "font": "Georgia, 'Times New Roman', serif", "size": 208, "color": "#111111", "top": 60, "align": "middle" },
+    "chinese": { "font": "'PingFang SC', 'Noto Sans CJK SC', sans-serif", "size": 60, "weight": 900, "color": "#111111", "top": 320, "align": "middle" }
+  }
 }

@@ -70,6 +70,15 @@ function normalizeMetadata(data: Record<string, unknown>): Partial<ArticleMetada
   if (typeof data.cover === 'string' && data.cover.trim()) metadata.cover = data.cover.trim();
   if (typeof data.enableComment === 'boolean') metadata.enableComment = data.enableComment;
 
+  if (data.coverFields && typeof data.coverFields === 'object' && !Array.isArray(data.coverFields)) {
+    const entries: Record<string, string> = {};
+    for (const [key, value] of Object.entries(data.coverFields as Record<string, unknown>)) {
+      if (value === null || value === undefined) continue;
+      entries[key] = String(value);
+    }
+    if (Object.keys(entries).length > 0) metadata.coverFields = entries;
+  }
+
   return metadata;
 }
 
