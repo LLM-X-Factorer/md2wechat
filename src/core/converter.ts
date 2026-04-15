@@ -580,6 +580,40 @@ const CHINESE_NUMBERS = ['一', '二', '三', '四', '五', '六', '七', '八',
 
 const EXAM_CARD_STRONG_REGEX = /(大学|学院|学校)/;
 
+const BACKGROUND_LABELS: Array<[string, string]> = [
+  ['school', '学校 / 专业'],
+  ['rank', '成绩排名'],
+  ['english', '英语成绩'],
+  ['research', '科研'],
+  ['awards', '获奖'],
+  ['summerCamps', '夏令营'],
+  ['prePromotion', '预推免'],
+  ['offers', 'Offer'],
+  ['final', '最终去向'],
+  ['mentor', '保研辅导'],
+];
+
+function renderBackgroundTable(background: Record<string, string>): string {
+  const rows = BACKGROUND_LABELS
+    .filter(([key]) => background[key] && background[key].trim())
+    .map(([key, label]) => {
+      const value = escapeHtml(background[key]!.trim());
+      return (
+        `<tr>` +
+        `<th style="width:32%;padding:8px 10px;background:#f5f5f5;color:#555;font-weight:600;text-align:left;border:1px solid #e5e5e5;">${label}</th>` +
+        `<td style="padding:8px 10px;color:#333;border:1px solid #e5e5e5;">${value}</td>` +
+        `</tr>`
+      );
+    })
+    .join('');
+  if (!rows) return '';
+  return (
+    `<section class="tbl-wrapper student-share-bg-table-wrap" data-wxgzh="table" style="margin:16px 0 20px 0;">` +
+    `<table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.6;"><tbody>${rows}</tbody></table>` +
+    `</section>`
+  );
+}
+
 function applyThemeClassifiers($: cheerio.CheerioAPI, manifest: ThemeManifest | undefined): void {
   if (manifest?.name !== 'student-share') return;
 
@@ -600,7 +634,8 @@ function transformHeadings(
   $: cheerio.CheerioAPI,
   headingStyle: HeadingStyle,
   bannerEnabled: boolean,
-  part1AvatarSeed?: string
+  part1AvatarSeed?: string,
+  part1Background?: Record<string, string>
 ): void {
   if (headingStyle === 'default') return;
 
@@ -615,6 +650,9 @@ function transformHeadings(
       const avatarPlaceholder = h2Index === 1 && part1AvatarSeed !== undefined
         ? `<section class="student-share-avatar-pending" data-avatar-pending="1" data-avatar-seed="${part1AvatarSeed.replace(/"/g, '&quot;')}"></section>`
         : '';
+      const backgroundTable = h2Index === 1 && part1Background
+        ? renderBackgroundTable(part1Background)
+        : '';
       if (bannerEnabled) {
         $h2.replaceWith(
           `<section class="theme-heading theme-heading-banner" data-wxgzh="heading" data-banner-pending="1" data-banner-number="${num}" data-banner-title="${text.replace(/"/g, '&quot;')}">` +
@@ -624,7 +662,8 @@ function transformHeadings(
           `</section>` +
           `<h2 class="theme-heading-title">${text}</h2>` +
           `</section>` +
-          avatarPlaceholder
+          avatarPlaceholder +
+          backgroundTable
         );
       } else {
         $h2.replaceWith(
@@ -635,7 +674,8 @@ function transformHeadings(
           `</section>` +
           `<h2 class="theme-heading-title">${text}</h2>` +
           `</section>` +
-          avatarPlaceholder
+          avatarPlaceholder +
+          backgroundTable
         );
       }
     } else if (headingStyle === 'chinese-number') {
@@ -691,10 +731,12 @@ export function renderMarkdownToHtml(
   const manifest = loadThemeManifest(options.themesDir, metadata.theme);
   const headingStyle = manifest?.headingStyle ?? 'default';
   const bannerEnabled = !!manifest?.headingBanner?.enabled && headingStyle === 'part-number';
-  const part1AvatarSeed = manifest?.name === 'student-share' && headingStyle === 'part-number'
+  const isStudentSharePart1 = manifest?.name === 'student-share' && headingStyle === 'part-number';
+  const part1AvatarSeed = isStudentSharePart1
     ? `${metadata.theme ?? ''}|${metadata.title ?? ''}|${metadata.author ?? ''}`
     : undefined;
-  transformHeadings($, headingStyle, bannerEnabled, part1AvatarSeed);
+  const part1Background = isStudentSharePart1 ? metadata.background : undefined;
+  transformHeadings($, headingStyle, bannerEnabled, part1AvatarSeed, part1Background);
   applyThemeClassifiers($, manifest);
 
   const themeCss = loadThemeCss(metadata.theme, options.themesDir);

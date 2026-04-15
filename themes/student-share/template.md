@@ -5,6 +5,19 @@ coverFields:
   # 8-12 字短 tagline，会显示在封面顶部黄色气泡内
   # 建议格式："[学校类型] [专业] 保研[去向]"，例如：双非 SE 保研北航
   tagline: 双非 SE 保研北航
+# 可选：填写后会自动渲染为 Part.01 背景表格
+# 任一字段留空则不出现在表格中
+background:
+  school: 某 211 · 软件工程
+  rank: 8 / 120
+  english: 六级 560
+  research: 无
+  awards: 国家级 1 / 省级 2
+  summerCamps: 北航（优营）、清华（放弃）
+  prePromotion: 北航、复旦
+  offers: 北航、复旦
+  final: 北航国新院
+  mentor: 张老师
 ---
 
 # 标题：突出学校层次和逆袭结果（如"211 SE 纯绩点逆袭：从 0 offer 到北航国新院"）
