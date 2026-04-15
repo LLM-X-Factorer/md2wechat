@@ -12,10 +12,13 @@
   "cover": {
     "type": "template",
     "base": "assets/cover-base.png",
+    "width": 1770,
+    "height": 795,
+    "masks": [
+      { "x": 365, "y": 130, "width": 540, "height": 130, "color": "#F9DA04", "rx": 18 }
+    ],
     "overlays": [
-      { "field": "school",     "x": 360, "y": 330, "size": 46, "color": "#1a1a1a", "weight": 700, "anchor": "middle", "maxWidth": 520 },
-      { "field": "major",      "x": 360, "y": 400, "size": 36, "color": "#333333", "anchor": "middle", "maxWidth": 520 },
-      { "field": "finalOffer", "x": 360, "y": 470, "size": 40, "color": "#c0392b", "weight": 700, "anchor": "middle", "maxWidth": 520 }
+      { "field": "tagline", "x": 635, "y": 148, "size": 54, "color": "#000000", "weight": 900, "anchor": "middle", "maxWidth": 540, "font": "'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif" }
     ]
   },
   "headingBanner": {

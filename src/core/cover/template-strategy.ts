@@ -12,16 +12,33 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
+function measuredCharWidth(ch: string, fontSize: number): number {
+  const code = ch.charCodeAt(0);
+  // Latin / ASCII space & digits: half-width
+  if (code < 0x3000) return fontSize * 0.55;
+  // CJK ideographs: full-width
+  return fontSize * 0.95;
+}
+
 function wrapByWidth(text: string, maxWidth: number, fontSize: number): string[] {
   if (!maxWidth || maxWidth <= 0) return [text];
-  const approxCharWidth = fontSize * 1.05;
-  const charsPerLine = Math.max(1, Math.floor(maxWidth / approxCharWidth));
   const chars = [...text];
   const lines: string[] = [];
-  for (let i = 0; i < chars.length; i += charsPerLine) {
-    lines.push(chars.slice(i, i + charsPerLine).join(''));
+  let current = '';
+  let currentWidth = 0;
+  for (const ch of chars) {
+    const w = measuredCharWidth(ch, fontSize);
+    if (currentWidth + w > maxWidth && current.length > 0) {
+      lines.push(current);
+      current = ch;
+      currentWidth = w;
+    } else {
+      current += ch;
+      currentWidth += w;
+    }
   }
-  return lines;
+  if (current) lines.push(current);
+  return lines.length > 0 ? lines : [text];
 }
 
 function renderOverlayText(
@@ -88,7 +105,15 @@ export class TemplateCoverStrategy {
       return base.jpeg({ quality: 92 }).toBuffer();
     }
 
-    const svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${textFragments}</svg>`;
+    const maskFragments = (options.coverSpec.masks ?? [])
+      .map((mask) => {
+        const color = mask.color ?? '#FFD700';
+        const rx = mask.rx ?? 0;
+        return `<rect x="${mask.x}" y="${mask.y}" width="${mask.width}" height="${mask.height}" rx="${rx}" ry="${rx}" fill="${color}" />`;
+      })
+      .join('');
+
+    const svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${maskFragments}${textFragments}</svg>`;
 
     return base
       .composite([{ input: Buffer.from(svg) }])

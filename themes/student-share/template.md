@@ -2,9 +2,9 @@
 theme: student-share
 author: 点头教育
 coverFields:
-  school: 北京航空航天大学
-  major: 国家治理与新兴技术
-  finalOffer: 北航国新院 拟录取
+  # 8-12 字短 tagline，会显示在封面顶部黄色气泡内
+  # 建议格式："[学校类型] [专业] 保研[去向]"，例如：双非 SE 保研北航
+  tagline: 双非 SE 保研北航
 ---
 
 # 标题：突出学校层次和逆袭结果（如"211 SE 纯绩点逆袭：从 0 offer 到北航国新院"）

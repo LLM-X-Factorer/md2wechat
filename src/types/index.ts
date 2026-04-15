@@ -89,11 +89,21 @@ export interface ThemeCoverOverlaySpec {
   anchor?: 'start' | 'middle' | 'end';
 }
 
+export interface ThemeCoverMaskSpec {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color?: string;
+  rx?: number;
+}
+
 export interface ThemeCoverSpec {
   type: 'template';
   base: string;
   width?: number;
   height?: number;
+  masks?: ThemeCoverMaskSpec[];
   overlays: ThemeCoverOverlaySpec[];
 }
 
