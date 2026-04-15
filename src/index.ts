@@ -6,6 +6,7 @@ import { initDatabase, closeDatabase } from './services/database.js';
 import { PublishPipeline } from './services/pipeline.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerPublishRoute } from './routes/publish.js';
+import { registerPreviewRoute } from './routes/preview.js';
 import { registerHistoryRoute } from './routes/history.js';
 import { registerThemesRoute } from './routes/themes.js';
 import { registerConfigRoutes } from './routes/config.js';
@@ -93,6 +94,7 @@ async function main(): Promise<void> {
   // Register routes
   registerHealthRoute(app, pipeline);
   registerPublishRoute(app, pipeline, config);
+  registerPreviewRoute(app, pipeline);
   registerHistoryRoute(app);
   registerThemesRoute(app, config);
   registerConfigRoutes(app, config);
