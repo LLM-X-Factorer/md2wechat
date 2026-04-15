@@ -11,6 +11,7 @@ export interface ArticleMetadata {
   theme?: string;
   cover?: string;
   enableComment?: boolean;
+  coverFields?: Record<string, string>;
 }
 
 export interface PublishOptions {
@@ -71,6 +72,40 @@ export interface CompatCssConfig {
 
 export type HeadingStyle = 'default' | 'part-number' | 'chinese-number';
 
+export interface ThemeAutoInject {
+  header?: string;
+  footerMarkdown?: string;
+}
+
+export interface ThemeCoverOverlaySpec {
+  field: string;
+  x: number;
+  y: number;
+  size?: number;
+  color?: string;
+  font?: string;
+  weight?: string | number;
+  maxWidth?: number;
+  anchor?: 'start' | 'middle' | 'end';
+}
+
+export interface ThemeCoverSpec {
+  type: 'template';
+  base: string;
+  width?: number;
+  height?: number;
+  overlays: ThemeCoverOverlaySpec[];
+}
+
+export interface ThemeHeadingBannerSpec {
+  enabled: boolean;
+  base?: string;
+  width?: number;
+  height?: number;
+  english?: { font?: string; size?: number; color?: string; top?: number; align?: 'start' | 'middle' | 'end' };
+  chinese?: { font?: string; size?: number; color?: string; weight?: string | number; top?: number; align?: 'start' | 'middle' | 'end' };
+}
+
 export interface ThemeManifest {
   name: string;
   displayName: string;
@@ -79,6 +114,9 @@ export interface ThemeManifest {
   category?: string;
   headingStyle?: HeadingStyle;
   compatOverrides?: Partial<Record<keyof CompatCssConfig, boolean>>;
+  autoInject?: ThemeAutoInject;
+  cover?: ThemeCoverSpec;
+  headingBanner?: ThemeHeadingBannerSpec;
 }
 
 export interface ThemeInfo {

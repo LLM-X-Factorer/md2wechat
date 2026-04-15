@@ -499,7 +499,10 @@ function cleanInlinedHtml(html: string): string {
 }
 
 function createMetadataTags(metadata: ArticleMetadata): string {
-  const entries = Object.entries(metadata).filter(([, value]) => value !== undefined);
+  const entries = Object.entries(metadata).filter(([, value]) => {
+    if (value === undefined || value === null) return false;
+    return ['string', 'number', 'boolean'].includes(typeof value);
+  });
   return entries
     .map(([key, value]) => `<meta name="wxgzh:${key}" content="${escapeHtmlAttribute(String(value))}">`)
     .join('\n');
@@ -575,7 +578,7 @@ function loadThemeManifest(themesDir: string, theme: string | undefined): ThemeM
 const CHINESE_NUMBERS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
   '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
 
-function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle): void {
+function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle, bannerEnabled: boolean): void {
   if (headingStyle === 'default') return;
 
   let h2Index = 0;
@@ -586,15 +589,27 @@ function transformHeadings($: cheerio.CheerioAPI, headingStyle: HeadingStyle): v
 
     if (headingStyle === 'part-number') {
       const num = String(h2Index).padStart(2, '0');
-      $h2.replaceWith(
-        `<section class="theme-heading" data-wxgzh="heading">` +
-        `<section class="theme-heading-number">` +
-        `<span class="theme-heading-part">Part.</span>` +
-        `<span class="theme-heading-num">${num}</span>` +
-        `</section>` +
-        `<h2 class="theme-heading-title">${text}</h2>` +
-        `</section>`
-      );
+      if (bannerEnabled) {
+        $h2.replaceWith(
+          `<section class="theme-heading theme-heading-banner" data-wxgzh="heading" data-banner-pending="1" data-banner-number="${num}" data-banner-title="${text.replace(/"/g, '&quot;')}">` +
+          `<section class="theme-heading-number">` +
+          `<span class="theme-heading-part">Part.</span>` +
+          `<span class="theme-heading-num">${num}</span>` +
+          `</section>` +
+          `<h2 class="theme-heading-title">${text}</h2>` +
+          `</section>`
+        );
+      } else {
+        $h2.replaceWith(
+          `<section class="theme-heading" data-wxgzh="heading">` +
+          `<section class="theme-heading-number">` +
+          `<span class="theme-heading-part">Part.</span>` +
+          `<span class="theme-heading-num">${num}</span>` +
+          `</section>` +
+          `<h2 class="theme-heading-title">${text}</h2>` +
+          `</section>`
+        );
+      }
     } else if (headingStyle === 'chinese-number') {
       const label = CHINESE_NUMBERS[h2Index - 1] ?? String(h2Index);
       $h2.replaceWith(
@@ -647,7 +662,8 @@ export function renderMarkdownToHtml(
 
   const manifest = loadThemeManifest(options.themesDir, metadata.theme);
   const headingStyle = manifest?.headingStyle ?? 'default';
-  transformHeadings($, headingStyle);
+  const bannerEnabled = !!manifest?.headingBanner?.enabled && headingStyle === 'part-number';
+  transformHeadings($, headingStyle, bannerEnabled);
 
   const themeCss = loadThemeCss(metadata.theme, options.themesDir);
   const customCss = loadCustomCss(options.themesDir);

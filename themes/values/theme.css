@@ -65,9 +65,9 @@ h4 {
 /* 正文 - 温暖有力 */
 p {
   margin: 1em 3%;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 2;
-  color: #333333;
+  color: #000000;
   text-align: justify;
 }
 
@@ -129,9 +129,9 @@ ol li {
 
 li {
   margin: 0.4em 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.8;
-  color: #333333;
+  color: #000000;
 }
 
 /* 代码块 */
