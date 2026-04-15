@@ -1,19 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { PublishPipeline } from '../services/pipeline.js';
-import type { AppConfig, PipelineError, PublishOptions } from '../types/index.js';
-
-const ALLOWED_ARTICLE_EXT = new Set(['.md']);
-const ALLOWED_IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
-const FILENAME_REGEX = /^[a-zA-Z0-9._\-\u4e00-\u9fff]+$/;
-
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._\-]/g, '_');
-}
-
-function getFileExtension(filename: string): string {
-  const dotIndex = filename.lastIndexOf('.');
-  return dotIndex >= 0 ? filename.slice(dotIndex).toLowerCase() : '';
-}
+import type { AppConfig, PipelineError } from '../types/index.js';
+import { parsePublishMultipart } from './_multipart.js';
 
 export function registerPublishRoute(
   app: FastifyInstance,
@@ -28,80 +16,16 @@ export function registerPublishRoute(
       });
     }
 
-    let articleBuffer: Buffer | null = null;
-    let articleFilename = 'article.md';
-    const images: Array<{ buffer: Buffer; filename: string }> = [];
-    let coverFile: { buffer: Buffer; filename: string } | undefined;
-    const fields: Record<string, string> = {};
-
-    try {
-      const parts = request.parts();
-      for await (const part of parts) {
-        if (part.type === 'file') {
-          const buffer = await part.toBuffer();
-          const filename = sanitizeFilename(part.filename);
-          const ext = getFileExtension(part.filename);
-
-          if (part.fieldname === 'article') {
-            if (!ALLOWED_ARTICLE_EXT.has(ext)) {
-              return reply.status(400).send({
-                success: false,
-                error: { code: 'INVALID_FILE', step: 'upload', message: `不支持的文件格式: ${ext}` },
-              });
-            }
-            articleBuffer = buffer;
-            articleFilename = filename;
-          } else if (part.fieldname === 'cover') {
-            if (!ALLOWED_IMAGE_EXT.has(ext)) {
-              return reply.status(400).send({
-                success: false,
-                error: { code: 'INVALID_FILE', step: 'upload', message: `不支持的封面格式: ${ext}` },
-              });
-            }
-            coverFile = { buffer, filename };
-          } else if (part.fieldname === 'images[]' || part.fieldname === 'images') {
-            if (ALLOWED_IMAGE_EXT.has(ext)) {
-              images.push({ buffer, filename });
-            }
-          }
-        } else {
-          fields[part.fieldname] = (part.value as string) ?? '';
-        }
-      }
-    } catch (err) {
+    const parseResult = await parsePublishMultipart(request);
+    if (!parseResult.ok) {
       return reply.status(400).send({
         success: false,
-        error: {
-          code: 'INVALID_FILE',
-          step: 'upload',
-          message: err instanceof Error ? err.message : '文件上传解析失败',
-        },
+        error: { code: parseResult.code, step: parseResult.step, message: parseResult.message },
       });
     }
 
-    if (!articleBuffer) {
-      return reply.status(400).send({
-        success: false,
-        error: { code: 'INVALID_FILE', step: 'upload', message: '缺少 article 文件' },
-      });
-    }
-
-    const publishOptions: PublishOptions = {
-      article: articleBuffer,
-      articleFilename,
-      images: images.length > 0 ? images : undefined,
-      cover: coverFile,
-      author: fields.author || undefined,
-      theme: fields.theme || undefined,
-      digest: fields.digest || undefined,
-      enableComment: fields.enableComment === 'true' || fields.enableComment === '1',
-      coverStrategy: (fields.coverStrategy as 'sharp' | 'ai') || undefined,
-      coverPrompt: fields.coverPrompt || undefined,
-      webhookUrl: fields.webhookUrl || undefined,
-    };
-
     try {
-      const result = await pipeline.execute(publishOptions);
+      const result = await pipeline.execute(parseResult.options);
       return reply.status(200).send({
         success: true,
         data: result,

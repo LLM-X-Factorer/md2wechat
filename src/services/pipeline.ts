@@ -13,6 +13,19 @@ import { insertPublishRecord } from './publishRecord.js';
 import { triggerWebhook } from './webhook.js';
 import type { AppConfig, PublishOptions, PublishResult, CoverStrategy, PipelineError } from '../types/index.js';
 
+export interface PreparedArticle {
+  title: string;
+  author: string;
+  theme: string;
+  digest: string;
+  enableComment: boolean;
+  html: string;
+  coverBuffer: Buffer;
+  coverStrategy: string;
+  localImages: Map<string, Buffer>;
+  bannerCount: number;
+}
+
 function createPipelineError(message: string, code: string, step: string): PipelineError {
   const error = new Error(message) as PipelineError;
   error.code = code;
@@ -56,9 +69,7 @@ export class PublishPipeline {
     return !!this.aiStrategy;
   }
 
-  async execute(options: PublishOptions): Promise<PublishResult> {
-    const publishId = randomUUID();
-
+  async prepare(options: PublishOptions): Promise<PreparedArticle> {
     // Step 1: Parse Markdown
     let parsed;
     try {
@@ -72,7 +83,6 @@ export class PublishPipeline {
       );
     }
 
-    // Merge metadata with request options (request params > front matter > defaults)
     const title = parsed.metadata.title ?? '未命名文章';
     const author = options.author ?? parsed.metadata.author ?? this.config.defaultAuthor;
     const theme = options.theme ?? parsed.metadata.theme ?? this.config.defaultTheme;
@@ -81,14 +91,15 @@ export class PublishPipeline {
     const enableComment = options.enableComment ?? parsed.metadata.enableComment ?? false;
     const coverStrategy = options.coverStrategy ?? this.config.defaultCoverStrategy;
 
-    this.logger.info(`Publishing: "${title}" by ${author}, theme=${theme}, cover=${coverStrategy}`);
+    this.logger.info(`Preparing: "${title}" by ${author}, theme=${theme}, cover=${coverStrategy}`);
 
-    // Step 2: Render Markdown to HTML
+    // Step 2: Render Markdown to HTML (autoInject → render → banner → themeAssets)
     const manifest = loadThemeManifest(this.config.themesDir, theme);
     const bodyWithInjections = applyAutoInject(parsed.body, this.config.themesDir, manifest);
 
     let html;
     const themeAssetImages = new Map<string, Buffer>();
+    let bannerCount = 0;
     try {
       const rendered = renderMarkdownToHtml(
         bodyWithInjections,
@@ -98,7 +109,9 @@ export class PublishPipeline {
           themesDir: this.config.themesDir,
         }
       );
+      const sizeBeforeBanner = themeAssetImages.size;
       const withBanners = await processHeadingBanners(rendered, manifest, this.config.themesDir, themeAssetImages);
+      bannerCount = themeAssetImages.size - sizeBeforeBanner;
       const resolved = resolveThemeAssetsInHtml(withBanners, this.config.themesDir, manifest, themeAssetImages);
       html = resolved.html;
     } catch (err) {
@@ -109,40 +122,21 @@ export class PublishPipeline {
       );
     }
 
-    // Step 3: Fix HTML (upload images)
-    let fixedHtml;
-    try {
-      const localImages = new Map<string, Buffer>(themeAssetImages);
-      if (options.images) {
-        for (const img of options.images) {
-          localImages.set(img.filename, img.buffer);
-        }
+    // Merge theme assets with user-provided images
+    const localImages = new Map<string, Buffer>(themeAssetImages);
+    if (options.images) {
+      for (const img of options.images) {
+        localImages.set(img.filename, img.buffer);
       }
-
-      const fixResult = await fixHtmlContent(html, {
-        upload: !!this.config.wxAppId,
-        wechat: this.wechat,
-        localImages,
-        logger: this.logger,
-      });
-      fixedHtml = fixResult.html;
-      this.logger.info(`Images: ${fixResult.imageCount} found, ${fixResult.uploadedCount} uploaded, ${fixResult.failedCount} failed`);
-    } catch (err) {
-      throw createPipelineError(
-        `图片上传替换失败: ${err instanceof Error ? err.message : String(err)}`,
-        'FIX_ERROR',
-        'fix'
-      );
     }
 
-    // Step 4: Generate cover
+    // Step 3: Generate cover (no upload here)
     let coverBuffer: Buffer;
-    let actualCoverStrategy = coverStrategy;
+    let actualCoverStrategy = coverStrategy as string;
     try {
       if (options.cover) {
-        // User-provided cover has highest priority
         coverBuffer = options.cover.buffer;
-        actualCoverStrategy = 'custom' as 'sharp';
+        actualCoverStrategy = 'custom';
       } else if (manifest?.cover?.type === 'template' && coverStrategy !== 'ai') {
         try {
           coverBuffer = await this.templateStrategy.generate({
@@ -154,7 +148,7 @@ export class PublishPipeline {
             coverSpec: manifest.cover,
             fields: parsed.metadata.coverFields ?? {},
           });
-          actualCoverStrategy = 'template' as 'sharp';
+          actualCoverStrategy = 'template';
         } catch (err) {
           this.logger.warn(
             `Template cover failed, falling back to sharp: ${err instanceof Error ? err.message : String(err)}`
@@ -173,7 +167,7 @@ export class PublishPipeline {
           this.logger.warn('AI cover not available, falling back to sharp strategy');
         }
 
-        actualCoverStrategy = strategy.name as 'sharp' | 'ai';
+        actualCoverStrategy = strategy.name;
 
         coverBuffer = await strategy.generate({
           title,
@@ -184,7 +178,6 @@ export class PublishPipeline {
         });
       }
     } catch (err) {
-      // If AI strategy fails, try fallback to sharp
       if (coverStrategy === 'ai') {
         this.logger.warn(`AI cover failed, falling back to sharp: ${err instanceof Error ? err.message : String(err)}`);
         try {
@@ -211,7 +204,48 @@ export class PublishPipeline {
       }
     }
 
-    // Step 5: Upload cover and create draft
+    return {
+      title,
+      author,
+      theme,
+      digest,
+      enableComment,
+      html,
+      coverBuffer,
+      coverStrategy: actualCoverStrategy,
+      localImages,
+      bannerCount,
+    };
+  }
+
+  async execute(options: PublishOptions): Promise<PublishResult> {
+    const publishId = randomUUID();
+    const prepared = await this.prepare(options);
+    const { title, author, theme, digest, enableComment, html, coverBuffer, localImages } = prepared;
+    const actualCoverStrategy = prepared.coverStrategy;
+
+    this.logger.info(`Publishing: "${title}" by ${author}, theme=${theme}, cover=${actualCoverStrategy}`);
+
+    // Fix HTML (upload images)
+    let fixedHtml;
+    try {
+      const fixResult = await fixHtmlContent(html, {
+        upload: !!this.config.wxAppId,
+        wechat: this.wechat,
+        localImages,
+        logger: this.logger,
+      });
+      fixedHtml = fixResult.html;
+      this.logger.info(`Images: ${fixResult.imageCount} found, ${fixResult.uploadedCount} uploaded, ${fixResult.failedCount} failed`);
+    } catch (err) {
+      throw createPipelineError(
+        `图片上传替换失败: ${err instanceof Error ? err.message : String(err)}`,
+        'FIX_ERROR',
+        'fix'
+      );
+    }
+
+    // Upload cover and create draft
     let mediaId: string;
     let thumbMediaId: string;
     let coverUrl: string | undefined;
@@ -240,7 +274,7 @@ export class PublishPipeline {
 
     const publishedAt = new Date().toISOString();
 
-    // Step 6: Save publish record
+    // Save publish record
     try {
       await insertPublishRecord({
         id: publishId,
@@ -260,10 +294,9 @@ export class PublishPipeline {
       });
     } catch (err) {
       this.logger.error(`Failed to save publish record: ${err instanceof Error ? err.message : String(err)}`);
-      // Don't throw — the draft was already created successfully
     }
 
-    // Step 7: Trigger webhook (async, non-blocking)
+    // Trigger webhook (async, non-blocking)
     triggerWebhook(
       options.webhookUrl,
       this.config.webhookUrl,
